@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+.claude/
+*.egg-info/
+
+# Large, fully reproducible generated artifacts -- regenerate with
+# `python scripts/run_pipeline.py` (deterministic, SEED=42). Excluded
+# because sensor_telemetry.csv exceeds GitHub's 100MB hard limit and
+# anomalies.csv sits right at the risky-file threshold. The small raw
+# CSVs (asset_metadata/asset_connectivity/weather) stay tracked since
+# they're a few KB-1MB and let a reviewer inspect real data without
+# running anything.
+data/raw/sensor_telemetry.csv
+data/processed/
+dashboard/anomalies.csv
