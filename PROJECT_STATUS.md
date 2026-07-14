@@ -5,8 +5,8 @@ is, how it's built, what's done, and what's left — without re-reading the whol
 re-deriving decisions already made. If picking this project back up in a new session,
 read this file first.
 
-**Last updated:** 2026-07-12. **Status: build complete, tested, verified, cleaned.**
-**Deadline:** 2026-07-14 (5 calendar days from receipt on 2026-07-09).
+**Last updated:** 2026-07-14. **Status: build complete, tested, verified, cleaned, pushed.**
+**Deadline:** 2026-07-14 (5 calendar days from receipt on 2026-07-09) — submitted.
 
 ---
 
@@ -50,27 +50,19 @@ Everything is built, executed for real (not hand-written), and independently ver
 - [x] Repo structure/naming cleaned to standard (see `docs/build_log.md` §10) —
       `pyproject.toml` added, `.gitignore` finalized, no stray/leftover files
 
-## 3. What's NOT done — the only remaining step
+## 3. Git — done
 
-**This is not yet a git repository.** Everything above is built and verified on disk in
-`D:\Nectar`, but `git init` has not run.
+All 5 session branches were created, committed, and merged into `main` in order, then
+pushed to the remote:
+- `session-1-data-foundation`
+- `session-2-eda-features`
+- `session-3-maintenance-forecasting`
+- `session-4-anomaly-connectivity`
+- `session-5-bonuses-docs`
 
-**The plan** (already agreed, mapped 1:1 to `docs/plan/day_1.md`...`day_5.md`):
-1. `git init`, set default branch to `main`
-2. Create 5 branches in order, each containing that day's files (see each `day_N.md`'s
-   "Files touched" list), each committed and then **merged into `main`** before starting
-   the next branch (not left unmerged — `main` needs to be fully working at every point,
-   since the codebase's shared modules mean no single unmerged branch would run on its own):
-   - `session-1-data-foundation`
-   - `session-2-eda-features`
-   - `session-3-maintenance-forecasting`
-   - `session-4-anomaly-connectivity`
-   - `session-5-bonuses-docs`
-3. Add the remote, push.
-
-**Blocked on:** an existing (can be empty) GitHub repo URL from the user. `gh` CLI is not
-installed on this machine, so the repo can't be created from here — only pushed to once a
-URL exists. Ask for it if resuming and it hasn't been provided yet.
+Remote: `https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform.git`.
+`main` is up to date with `origin/main`. `pytest tests/` → 27/27 passing (last verified
+2026-07-14). Nothing outstanding — the submission is complete and pushed.
 
 ## 4. Architecture (condensed — full detail in `README.md`)
 
