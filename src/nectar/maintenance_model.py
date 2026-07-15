@@ -14,8 +14,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (precision_score, recall_score, f1_score, roc_auc_score,
-                              average_precision_score, precision_recall_curve,
-                              confusion_matrix)
+                              average_precision_score, precision_recall_curve)
 
 from . import config
 from .logging_config import get_logger
