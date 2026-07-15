@@ -14,5 +14,7 @@ __pycache__/
 # they're a few KB-1MB and let a reviewer inspect real data without
 # running anything.
 data/raw/sensor_telemetry.csv
+data/raw/sensor_telemetry.parquet
 data/processed/
 dashboard/anomalies.csv
+dashboard/anomalies.parquet

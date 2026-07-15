@@ -15,9 +15,31 @@ log = get_logger(__name__)
 SENSOR_COLS = ["temperature", "humidity", "pressure", "vibration"]
 
 
+def read_csv_with_parquet_cache(csv_path: str, parse_dates: list[str] | None = None) -> pd.DataFrame:
+    """Transparent Parquet mirror of a large CSV (telemetry, anomalies --
+    anything with a real row count) -- same content, much faster to read
+    back on every subsequent call. Regenerated automatically whenever the
+    CSV is newer than the cached copy (mtime check), so it can never
+    silently serve stale data if the source CSV is regenerated. Shared by
+    preprocessing.load_raw() and the dashboard's anomalies.csv load --
+    exactly one caching implementation, not one per caller."""
+    parquet_path = os.path.splitext(csv_path)[0] + ".parquet"
+    if (os.path.exists(parquet_path)
+            and os.path.getmtime(parquet_path) >= os.path.getmtime(csv_path)):
+        return pd.read_parquet(parquet_path)
+
+    df = pd.read_csv(csv_path, parse_dates=parse_dates)
+    try:
+        df.to_parquet(parquet_path, index=False)
+    except Exception as e:
+        log.warning(f"Could not write parquet cache for {csv_path} ({e}); "
+                    "will re-read from CSV next time")
+    return df
+
+
 def load_raw() -> dict[str, pd.DataFrame]:
-    telemetry = pd.read_csv(os.path.join(config.DATA_RAW_DIR, "sensor_telemetry.csv"),
-                             parse_dates=["timestamp"])
+    telemetry = read_csv_with_parquet_cache(os.path.join(config.DATA_RAW_DIR, "sensor_telemetry.csv"),
+                                              parse_dates=["timestamp"])
     metadata = pd.read_csv(os.path.join(config.DATA_RAW_DIR, "asset_metadata.csv"),
                             parse_dates=["installation_date"])
     connectivity = pd.read_csv(os.path.join(config.DATA_RAW_DIR, "asset_connectivity.csv"))

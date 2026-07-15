@@ -194,3 +194,39 @@ surfaced a few things worth fixing:
 - Leftover session/reference material unrelated to the actual deliverable (a prior
   session log referencing the separate, unrelated project mentioned in §0, and a
   redundant copy of the brief) was removed entirely.
+
+---
+
+## 11. Dashboard performance optimization
+
+Post-submission, the dashboard's first load after a restart was timed rather than
+just described as "a bit slow": ~30s total. Added temporary timing instrumentation
+(sidebar/section captions for data load, graph build, live-scoring time) to measure
+each step instead of guessing, then fixed the two real bottlenecks it revealed.
+
+| Bottleneck | Root cause | Fix | Measured result |
+|---|---|---|---|
+| Live feature engineering (~20.6s) | `load_live_failure_scores()` ran `build_maintenance_features()` across the FULL 90-day, ~1.96M-row telemetry history, even though only the LAST row per asset is ever used for live scoring | Trim telemetry to a trailing 36h window before feature engineering (1.5x the largest 24h rolling window -- a safe margin, not the bare minimum) | Proven mathematically exact, not an approximation: every rolling/slope feature there is strictly backward-looking within its own window, so history beyond it cannot affect the last row |
+| Unused label computation | The same call also computed `target_24h` (the forward-looking fault label), which live scoring immediately discards | Added `need_target: bool = True` to `build_maintenance_features()`, defaulting to preserve existing training behavior; dashboard passes `need_target=False` | Smaller than expected (~7%) -- the label pass is a single rolling op vs. the main pass's 60 rolling ops per asset, so it was never the dominant cost |
+| Data load (~9.3s) | `sensor_telemetry.csv` (177MB) and `dashboard/anomalies.csv` (99MB) were re-parsed from raw CSV text on every server (re)start | Added `preprocessing.read_csv_with_parquet_cache()` -- a transparent Parquet mirror, auto-invalidated via an mtime check against the source CSV so it can never silently serve stale data | ~4x faster overall (9.31s -> 2.35s) on a warm cache -- 8x on telemetry alone, ~30x on anomalies alone |
+
+**Total: ~30.0s -> ~13.6s first-load time (~2.2x faster overall)**, measured against
+the real generated dataset, not estimated. Every fix has its own test proving the
+claim rather than trusting it: `tests/test_features.py::test_trailing_window_matches_full_history`
+(byte-identical output, trimmed window vs. full history) and
+`test_need_target_false_skips_label_without_changing_features`, plus 4 new tests in
+`tests/test_preprocessing.py` (cache output matches a plain CSV read, a cache hit
+serves identical content without rewriting the cache file, a stale cache is
+regenerated rather than silently served, and the helper works with no
+`parse_dates` too).
+
+**Honest remaining bottleneck, left alone deliberately:** live scoring is still
+~10.9s, now dominated by the per-asset Python overhead of
+`groupby("asset_id").apply(...)` inside `build_maintenance_features()` (145
+assets), not row count -- both fixes above target row count and hit diminishing
+returns once that became the real ceiling. A further fix would mean rewriting
+the rolling-feature computation to avoid per-group Python `.apply()` entirely --
+a materially bigger change to code shared with actual model training, not folded
+into this pass.
+
+Result: `pytest tests/` -> 55/55 passing (up from 49).

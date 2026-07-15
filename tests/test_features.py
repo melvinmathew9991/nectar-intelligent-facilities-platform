@@ -30,6 +30,25 @@ def _synthetic_metadata(asset_id="TEST-A-01"):
     }])
 
 
+def _long_varying_telemetry(n_hours, asset_id, seed):
+    """Genuinely time-varying (not flat) signal, long enough that truncating
+    history would show up in the rolling/slope features if window-locality
+    didn't hold."""
+    rng = np.random.default_rng(seed)
+    idx = pd.date_range("2025-01-01", periods=n_hours * 6, freq="10min")
+    n = len(idx)
+    t = np.arange(n)
+    return pd.DataFrame({
+        "timestamp": idx, "site_id": "CBE", "building_id": "CBE-B1", "asset_id": asset_id,
+        "temperature": 15 + 5 * np.sin(2 * np.pi * t / (24 * 6)) + rng.normal(0, 0.3, n),
+        "humidity": 50.0 + rng.normal(0, 2.0, n),
+        "pressure": 5.0 + 0.5 * np.sin(2 * np.pi * t / (48 * 6)) + rng.normal(0, 0.1, n),
+        "vibration": 2.0 + 0.3 * np.sin(2 * np.pi * t / (12 * 6)) + rng.normal(0, 0.05, n),
+        "power_consumption": 100.0 + 20 * np.sin(2 * np.pi * t / (24 * 6)) + rng.normal(0, 2.0, n),
+        "occupancy_count": 10.0, "operating_mode": "Cooling", "fault_flag": 0,
+    })
+
+
 def test_maintenance_target_is_forward_looking_not_backward():
     """A single fault at hour 40 should flip target_24h=1 starting exactly at
     hour 16 (40-24), not before, and should NOT stay 1 for 24h AFTER the fault
@@ -100,3 +119,65 @@ def test_forecast_features_no_leakage_window():
     min_ts = df["timestamp"].min()
     assert min_ts >= tel["timestamp"].min() + pd.Timedelta(hours=48)
     assert not df[feats].isna().any().any()
+
+
+def test_trailing_window_matches_full_history():
+    """The dashboard's live-scoring path (dashboard/app.py::load_live_failure_scores)
+    trims telemetry to a trailing 72h window before calling
+    build_maintenance_features, on the premise that every rolling/lag/slope
+    feature there looks strictly backward within a <=24h window -- so the
+    LAST row per asset (the only row live-scoring actually uses) is
+    unaffected by discarding older history. Verify that claim directly:
+    the full-history and trailing-window computations must produce
+    byte-identical features for that last row."""
+    tel = pd.concat([
+        _long_varying_telemetry(n_hours=200, asset_id="TEST-A-01", seed=1),
+        _long_varying_telemetry(n_hours=200, asset_id="TEST-B-01", seed=2),
+    ], ignore_index=True)
+    meta = pd.concat([
+        _synthetic_metadata(asset_id="TEST-A-01"),
+        _synthetic_metadata(asset_id="TEST-B-01"),
+    ], ignore_index=True)
+
+    df_full, feats = features.build_maintenance_features(tel, meta)
+    latest_full = (df_full.sort_values("timestamp").groupby("asset_id").tail(1)
+                   .set_index("asset_id").sort_index())
+
+    cutoff = tel["timestamp"].max() - pd.Timedelta(hours=36)
+    recent = tel[tel["timestamp"] >= cutoff]
+    df_trunc, _ = features.build_maintenance_features(recent, meta)
+    latest_trunc = (df_trunc.sort_values("timestamp").groupby("asset_id").tail(1)
+                    .set_index("asset_id").sort_index())
+
+    assert list(latest_full.index) == list(latest_trunc.index)
+    for asset_id in latest_full.index:
+        assert latest_full.loc[asset_id, "timestamp"] == latest_trunc.loc[asset_id, "timestamp"]
+        full_vals = latest_full.loc[asset_id, feats].values.astype(float)
+        trunc_vals = latest_trunc.loc[asset_id, feats].values.astype(float)
+        np.testing.assert_allclose(
+            full_vals, trunc_vals, rtol=1e-9, atol=1e-9,
+            err_msg=f"trailing-window truncation changed live-scoring features for {asset_id}")
+
+
+def test_need_target_false_skips_label_without_changing_features():
+    """need_target=False (used by the dashboard's live-scoring path, which
+    never uses target_24h) must skip computing the label column entirely,
+    while leaving every feature value identical to the need_target=True case."""
+    tel = _long_varying_telemetry(n_hours=100, asset_id="TEST-A-01", seed=3)
+    meta = _synthetic_metadata(asset_id="TEST-A-01")
+    tel.loc[50, "fault_flag"] = 1   # plant a fault so target_24h isn't trivially all-0
+
+    df_with, feats_with = features.build_maintenance_features(tel, meta, need_target=True)
+    df_without, feats_without = features.build_maintenance_features(tel, meta, need_target=False)
+
+    assert "target_24h" in df_with.columns
+    assert "target_24h" not in df_without.columns
+    assert feats_with == feats_without
+
+    df_with = df_with.sort_values("timestamp").reset_index(drop=True)
+    df_without = df_without.sort_values("timestamp").reset_index(drop=True)
+    np.testing.assert_allclose(
+        df_with[feats_with].values.astype(float),
+        df_without[feats_without].values.astype(float),
+        rtol=1e-9, atol=1e-9,
+        err_msg="need_target=False changed feature values, not just the label column")

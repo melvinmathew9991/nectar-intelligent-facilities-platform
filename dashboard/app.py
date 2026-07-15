@@ -8,6 +8,7 @@ Run:  streamlit run dashboard/app.py
 """
 import os
 import sys
+import time
 
 import joblib
 import numpy as np
@@ -27,7 +28,8 @@ BASE = os.path.dirname(__file__)
 def load_all():
     raw = preprocessing.load_raw()
     anom_path = os.path.join(BASE, "anomalies.csv")
-    anom = pd.read_csv(anom_path, parse_dates=["timestamp"]) if os.path.exists(anom_path) else None
+    anom = (preprocessing.read_csv_with_parquet_cache(anom_path, parse_dates=["timestamp"])
+             if os.path.exists(anom_path) else None)
     return raw["telemetry"], raw["metadata"], raw["connectivity"], raw["weather"], anom
 
 
@@ -42,7 +44,17 @@ def load_live_failure_scores(telemetry: pd.DataFrame, metadata: pd.DataFrame):
     bundle = joblib.load(model_path)
     model, scaler, feats, thr = bundle["model"], bundle["scaler"], bundle["features"], bundle["threshold"]
 
-    df, _ = features.build_maintenance_features(telemetry, metadata)
+    # Only the latest row per asset is ever used below, and every rolling/lag
+    # feature in build_maintenance_features looks strictly backward from a
+    # fixed number of rows (max window = 24h = 144 rows at 10-min resolution)
+    # -- so feeding it 90 days vs. a trailing 36h window (1.5x that, a safe
+    # margin around imputation edge effects) produces byte-identical output
+    # for the row we actually keep, at a fraction of the compute. Verified
+    # empirically in tests/test_features.py::test_trailing_window_matches_full_history.
+    cutoff = telemetry["timestamp"].max() - pd.Timedelta(hours=36)
+    recent = telemetry[telemetry["timestamp"] >= cutoff]
+
+    df, _ = features.build_maintenance_features(recent, metadata, need_target=False)
     latest = df.sort_values("timestamp").groupby("asset_id").tail(1).copy()
     X = latest.reindex(columns=feats, fill_value=0.0).values.astype(np.float32)
     if scaler is not None:
@@ -59,11 +71,18 @@ def load_graph_cached(metadata: pd.DataFrame, connectivity: pd.DataFrame) -> nx.
     return gmod.build_graph(metadata, connectivity)
 
 
+_t0 = time.time()
 telemetry, metadata, connectivity, weather, anom = load_all()
+_t_data = time.time() - _t0
+
+_t0 = time.time()
 G = load_graph_cached(metadata, connectivity)
+_t_graph = time.time() - _t0
 
 # ---------------- Sidebar ----------------
 st.sidebar.title("Nectar Facilities")
+st.sidebar.caption(f"Load times -- data: {_t_data:.2f}s | graph: {_t_graph:.2f}s "
+                    "(near-0 on cache hit)")
 site = st.sidebar.selectbox("Site", sorted(metadata.site_id.unique()))
 site_tel = telemetry[telemetry.site_id == site]
 site_meta = metadata[metadata.site_id == site]
@@ -92,21 +111,25 @@ if anom is not None:
         return "Critical" if r > 5 else ("Watch" if r > 2 else "Healthy")
     health["status"] = health["anomaly_rate_%"].apply(status)
     health = health.sort_values("anomaly_rate_%", ascending=False)
-    st.dataframe(health, use_container_width=True, hide_index=True)
+    st.dataframe(health, width="stretch", hide_index=True)
 else:
     st.info("Run notebook 05 to precompute dashboard/anomalies.csv for health scoring.")
 st.divider()
 
 # ---------------- 3. Failure predictions (LIVE scoring) ----------------
 st.subheader("Failure predictions (next 24h) -- live model scoring")
+_t0 = time.time()
 scores = load_live_failure_scores(telemetry, metadata)
+_t_scores = time.time() - _t0
 if scores is not None:
     site_scores = scores[scores.asset_id.isin(site_meta.asset_id)]
     at_risk = site_scores[site_scores.will_fail]
+    st.caption(f"Live feature engineering + scoring took {_t_scores:.2f}s "
+               "(near-0 on cache hit)")
     st.warning(f"{len(at_risk)} asset(s) currently above the maintenance-alert threshold"
                if len(at_risk) else "No assets currently above the maintenance-alert threshold.")
     st.dataframe(site_scores.style.format({"failure_probability_24h": "{:.1%}"}),
-                 use_container_width=True, hide_index=True)
+                 width="stretch", hide_index=True)
 else:
     st.info("Train the model in notebook 03 to enable live failure scoring.")
 st.divider()
@@ -149,7 +172,7 @@ if anom is not None:
               .sort_values("timestamp", ascending=False).head(15))
     st.dataframe(recent[["timestamp", "asset_id", "asset_type",
                           "vibration", "power_consumption"]],
-                 use_container_width=True, hide_index=True)
+                 width="stretch", hide_index=True)
 else:
     st.info("No precomputed anomalies available.")
 st.divider()

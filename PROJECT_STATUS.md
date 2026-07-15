@@ -5,7 +5,7 @@ is, how it's built, what's done, and what's left — without re-reading the whol
 re-deriving decisions already made. If picking this project back up in a new session,
 read this file first.
 
-**Last updated:** 2026-07-15. **Status: build complete, tested, verified, cleaned, pushed.**
+**Last updated:** 2026-07-16. **Status: build complete, tested, verified, cleaned, pushed.**
 **Deadline:** 2026-07-14 (5 calendar days from receipt on 2026-07-09) — submitted.
 
 ---
@@ -36,11 +36,14 @@ Everything is built, executed for real (not hand-written), and independently ver
 - [x] Task 4 Anomaly Detection — 4 methods, 2.5× validated anomaly lift near known faults
 - [x] Task 5 Connectivity Analysis — full graph, brief's example queries, all 4 planted
       DQ issues found
-- [x] Bonus: Streamlit dashboard — live model scoring, verified running headless
-- [x] 49/49 automated tests passing (`pytest tests/`) — extended post-submission with
+- [x] Bonus: Streamlit dashboard — live model scoring, verified running headless,
+      performance-optimized (~2.2x faster first load: ~30s -> ~13.6s, see
+      `docs/build_log.md` §11)
+- [x] 55/55 automated tests passing (`pytest tests/`) — extended post-submission with
       `test_anomaly.py`, `test_forecasting.py`, `test_maintenance_model.py` (22 tests)
       to close a coverage gap: those three modules had shipped in the pipeline with
-      zero tests
+      zero tests; `test_preprocessing.py` (4 tests) and 2 more in `test_features.py`
+      added alongside the dashboard performance work (see `docs/build_log.md` §11)
 - [x] All 6 notebooks confirmed executed (checked programmatically: `execution_count`
       populated, zero error outputs — not eyeballed)
 - [x] `scripts/run_pipeline.py` — one-command headless reproduction, verified to produce
@@ -70,8 +73,9 @@ One further branch was merged after that:
   [PR #2](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/pull/2)
 
 Remote: `https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform.git`.
-Local `main` is up to date with `origin/main`. `pytest tests/` → 49/49 passing (last
-verified 2026-07-15).
+Local `main` is up to date with `origin/main` as of the last push. `pytest tests/` →
+55/55 passing (last verified 2026-07-16) -- the dashboard performance work
+(`docs/build_log.md` §11) is complete locally but not yet committed/pushed.
 
 ## 4. Architecture (condensed — full detail in `README.md`)
 
@@ -101,12 +105,16 @@ package (`pip install -e .`) via `pyproject.toml`.
   in Task 4. See `docs/build_log.md` §6.
 - **All data is deterministic** (`SEED=42`) — `python scripts/run_pipeline.py`
   regenerates everything identically. Verified once already; trust it.
+- **`data/raw/sensor_telemetry.parquet` and `dashboard/anomalies.parquet` are
+  gitignored Parquet caches**, not source data — auto-regenerated from their CSVs
+  via an mtime check (see `preprocessing.read_csv_with_parquet_cache()`). Safe to
+  delete anytime; they'll rebuild on the next read. See `docs/build_log.md` §11.
 - Full bug-by-bug history: `docs/build_log.md`. Full day-by-day plan: `docs/plan/README.md`.
 
 ## 6. Quick verification (run these to confirm nothing has drifted)
 
 ```bash
-pytest tests/ -v                     # expect 49 passed
+pytest tests/ -v                     # expect 55 passed
 python scripts/run_pipeline.py       # expect ~5 min, metrics matching README's TL;DR table
 ```
 

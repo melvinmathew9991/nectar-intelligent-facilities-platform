@@ -21,7 +21,7 @@ MAINT_SENSOR_COLS = ["temperature", "vibration", "power_consumption", "pressure"
 # Task 2: predictive-maintenance features + 24h-ahead target
 # ---------------------------------------------------------------------------
 def build_maintenance_features(telemetry: pd.DataFrame, metadata: pd.DataFrame,
-                                 rotating_only: bool = True):
+                                 rotating_only: bool = True, need_target: bool = True):
     df = telemetry.copy()
 
     if rotating_only:
@@ -75,15 +75,19 @@ def build_maintenance_features(telemetry: pd.DataFrame, metadata: pd.DataFrame,
     feature_names = base_feats + mode_feats + type_feats + feat_cols
 
     # ---- 24h-ahead target: does a fault occur in the NEXT 24h? (forward-looking) ----
-    def _target(g: pd.DataFrame) -> pd.DataFrame:
-        g = g.sort_values("timestamp")
-        fut = g["fault_flag"].values[::-1]
-        fut = pd.Series(fut).rolling(24 * STEPS_PER_HOUR, min_periods=1).max().values[::-1]
-        g["target_24h"] = (fut > 0).astype(int)
-        return g
+    # Skippable via need_target=False: live-scoring callers only ever use the
+    # LATEST row's features, never the label, so this second per-asset pass
+    # (as expensive as the rolling-feature pass above) is pure waste for them.
+    if need_target:
+        def _target(g: pd.DataFrame) -> pd.DataFrame:
+            g = g.sort_values("timestamp")
+            fut = g["fault_flag"].values[::-1]
+            fut = pd.Series(fut).rolling(24 * STEPS_PER_HOUR, min_periods=1).max().values[::-1]
+            g["target_24h"] = (fut > 0).astype(int)
+            return g
 
-    df = (df.groupby("asset_id", group_keys=False)[df.columns]
-          .apply(_target).reset_index(drop=True))
+        df = (df.groupby("asset_id", group_keys=False)[df.columns]
+              .apply(_target).reset_index(drop=True))
 
     return df, feature_names
 
