@@ -60,8 +60,8 @@ real lift is 1.50×, a much more honest and useful number.
 
 ## 3. Feature engineering
 
-`features.py` — shared by Task 2 training, the dashboard's live scoring, and the API, so
-there is exactly one implementation of the feature contract. `tests/test_features.py`
+`features.py` — shared by Task 2 training and the dashboard's live scoring, so there is
+exactly one implementation of the feature contract. `tests/test_features.py`
 specifically tests for look-ahead leakage: a synthetic single-fault series confirms the
 24h-ahead target flips at the correct forward boundary (not before), and a synthetic
 spike placed near the end of a series is confirmed to never affect rolling features
@@ -146,28 +146,12 @@ hand-checkable case before trusting the full dataset.
 
 ---
 
-## 8. Bonus deliverables
+## 8. Bonus deliverable
 
 **Dashboard**: built to do *genuine live scoring* (load the saved model, build real
 features from each asset's actual recent history, score it) rather than the weaker
 "confirm the model file exists" pattern seen in the other project reviewed earlier.
 Verified running headless with no server-side exceptions.
-
-**API**: built from the start to accept raw telemetry (`asset_id` or an explicit
-`telemetry_window`), not a pre-engineered feature dict — feature engineering runs inside
-the endpoint via the same `features.py` used in training. Two bugs surfaced on the first
-live test against a running server:
-
-- `pd.get_dummies()` only creates one-hot columns for categories *present* in whatever
-  data it's given — scoring a single Chiller never produces `type_AHU`/`type_Pump`/
-  `mode_Heating` columns, breaking train/serve parity against the model's expected 82-column
-  input. Fixed by reindexing to the trained feature list, missing columns filled with 0.
-- A `KeyError` on `timestamp` immediately after — caused by reading `timestamp` *after*
-  the reindex above had already dropped it. Fixed by capturing it before reindexing.
-
-Both fixed, then verified end-to-end against a live server: health check, predictions
-for two different asset types, the two graph endpoints, a 404 for an unknown asset, and
-a 400 with an informative message for a non-rotating asset type.
 
 ---
 
@@ -183,7 +167,7 @@ rather than just asserting it.
 A final verification pass before considering the build "done": full 27-test suite,
 every notebook's `execution_count` and error-output checked programmatically (not
 eyeballed), all artifact file timestamps cross-checked to confirm they came from the same
-generation run, and both the dashboard and API re-launched and hit live one more time.
+generation run, and the dashboard re-launched and hit live one more time.
 
 ---
 
@@ -207,21 +191,6 @@ surfaced a few things worth fixing:
   GitHub's hard size limit (`sensor_telemetry.csv`, 169MB) or close enough to be risky
   (`dashboard/anomalies.csv`, 95MB) — both fully reproducible via
   `python scripts/run_pipeline.py`.
-
----
-
-## 11. Post-submission: FastAPI end-to-end tests
-
-After the initial submission (§9-10), the test suite was audited and found to cover
-Task 2/5 logic and the data generator thoroughly, but not `api/main.py` itself —
-Bonus B had only been verified manually (curl/Swagger). `tests/test_api.py` was added:
-9 tests against the live app via FastAPI's `TestClient` (`/health`, `/`,
-`/predict_failure` for each rotating asset type, unknown-asset 404, non-rotating-asset
-400, and the two graph endpoints incl. their 404 paths) — the same code path a real
-HTTP client hits, not a mocked model. Skipped automatically if the full pipeline hasn't
-been run yet (needs `data/raw/sensor_telemetry.csv` + `models/*.pkl`). Suite total:
-27 -> 37, all passing. `README.md`, `PROJECT_STATUS.md`, and `reports/report.md`
-updated to the new count.
 - Leftover session/reference material unrelated to the actual deliverable (a prior
   session log referencing the separate, unrelated project mentioned in §0, and a
   redundant copy of the brief) was removed entirely.

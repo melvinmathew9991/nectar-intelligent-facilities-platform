@@ -1,19 +1,14 @@
-# Day 5 — Bonuses, Documentation & Final QA
+# Day 5 — Bonus, Documentation & Final QA
 
 **Branch:** `session-5-bonuses-docs`
 
-**Goal:** the optional bonuses (only one is required by the brief; building both was
-judged worth the marginal cost given how much of Tasks 2-5 they reuse), then everything
-needed to make the submission reviewable and reproducible by someone who wasn't there
-for the first four days.
+**Goal:** the bonus dashboard, then everything needed to make the submission reviewable
+and reproducible by someone who wasn't there for the first four days.
 
 ## Tasks
 
 - `dashboard/app.py` — Streamlit, 6 sections including **live** model scoring against
   each asset's actual current feature vector (not a "model file exists" placeholder).
-- `api/main.py` — FastAPI, `POST /predict_failure` accepting raw telemetry (not a
-  pre-engineered feature dict) with feature engineering running inside the endpoint via
-  the same `features.py` used in training.
 - `scripts/run_pipeline.py` — one-command headless reproduction of the entire system,
   used to prove reproducibility empirically (its output was checked to match the
   individually-executed notebooks' metrics exactly) rather than just asserting it.
@@ -23,14 +18,13 @@ for the first four days.
 - **Final QA pass** (this is the step most plans skip and shouldn't): re-run the full
   test suite, programmatically confirm every notebook's `execution_count`/error state
   (not eyeballed), cross-check artifact timestamps for mutual consistency, and
-  re-launch both the dashboard and API live one more time before calling it done.
+  re-launch the dashboard live one more time before calling it done.
 - Repository cleanup and structure/naming pass, then push.
 
 ## Files touched
 
 ```
 dashboard/app.py
-api/main.py
 scripts/run_pipeline.py
 docs/data_dictionary.md
 docs/build_log.md
@@ -44,6 +38,4 @@ reports/report.md
 
 A complete, independently-verified, reviewable submission.
 
-See `docs/build_log.md` §8-10 for the real bugs found in the API (a train/serve parity
-gap in one-hot feature encoding, plus a variable-ordering bug found immediately after)
-and the repository cleanup pass that preceded the push.
+See `docs/build_log.md` §10 for the repository cleanup pass that preceded the push.

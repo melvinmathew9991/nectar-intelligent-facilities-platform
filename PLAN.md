@@ -6,9 +6,8 @@ Take-home assessment, greenfield `D:\Nectar`. No real data exists, so the founda
 whole submission is a synthetic-but-physically-grounded IoT dataset — everything downstream (EDA findings, model learnability, anomaly signatures, connectivity failure-impact narrative) is only as credible as the generator. This version (v2) replaces v1's generic noise-based generator with a domain-grounded one (real HVAC/BMS physics, ASHRAE/ISO-standard ranges, causal coupling across the asset graph) after an explicit review pass against the brief and IoT domain practice. **This is the version we build against — no further plan revisions expected.**
 
 Confirmed scope:
-- Build everything: 5 core tasks + Streamlit dashboard + FastAPI `/predict_failure` endpoint.
+- Build everything: 5 core tasks + a Streamlit dashboard.
 - Data scale: ~2M telemetry rows, 90 days, 10-min resolution, ~150-160 assets across 9 buildings/3 sites.
-- Graph/connectivity bonus: NetworkX + plain Python query functions (not a literal GraphQL server).
 - 4th synthetic dataset `weather.csv` (site_id, timestamp, outdoor_temp, outdoor_humidity) added beyond the brief's 3 named datasets — documented as an explicit assumption (real BMS deployments commonly ingest a weather feed as an exogenous input for load/forecasting).
 - Effort allocated in proportion to rubric weights: deepest on Predictive Modeling (20%) and
   Connectivity Analysis (15%); EDA (15%) thorough; Forecasting/Anomaly (10% each) solid but leaner.
@@ -51,7 +50,6 @@ D:\Nectar\
   reports/figures/               exported chart PNGs referenced by the report
   reports/Nectar_DS_Challenge_Report.md
   dashboard/app.py
-  api/main.py
   requirements.txt
   README.md
 ```
@@ -161,12 +159,7 @@ Reads precomputed artifacts. Tabs: Site Overview, Asset Health (Task 2 probabili
 Trends (Task 3 forecasts incl. weather overlay), Anomaly Alerts (Task 4), Asset Connectivity
 (interactive graph + Task 5 query functions as a simple UI).
 
-## 8. Bonus — FastAPI Deployment (`api/main.py`)
-`POST /predict_failure` (telemetry window or asset_id → failure probability + risk tier, reusing
-`features.py` for train/serve parity), `GET /health`, small graph endpoints
-(`/assets/{id}/downstream_impact`) tying in Task 5.
-
-## 9. Reproducibility, Testing, Docs
+## 8. Reproducibility, Testing, Docs
 - `scripts/run_pipeline.py`: one command, full pipeline, writes all artifacts.
 - `tests/`: sanity-check generator output ranges/counts, no time-split leakage, graph query
 correctness on a fixture — serves the Code Quality rubric line concretely.
@@ -176,7 +169,7 @@ disclosure, weather.csv as added scope, South-Indian-climate mode assumption, st
 - `reports/Nectar_DS_Challenge_Report.md`: ~5-page equivalent, per-task results + business impact + connectivity findings + assumptions appendix.
 
 ## Tech Stack (`requirements.txt`)
-pandas, numpy, scikit-learn, lightgbm, xgboost, shap, statsmodels, ruptures, matplotlib, seaborn, plotly, networkx, pyvis, streamlit, fastapi, uvicorn, pydantic, pyarrow, jupyter, pytest.
+pandas, numpy, scikit-learn, lightgbm, xgboost, shap, statsmodels, ruptures, matplotlib, seaborn, plotly, networkx, pyvis, streamlit, pyarrow, jupyter, pytest.
 
 ## Build Sequence
 1. Scaffold folders + `requirements.txt` + `config.py`.
@@ -190,8 +183,7 @@ pandas, numpy, scikit-learn, lightgbm, xgboost, shap, statsmodels, ruptures, mat
 9. `anomaly.py` + notebook 05.
 10. `graph.py` (+ `tests/test_graph.py`) + notebook 06.
 11. `dashboard/app.py`.
-12. `api/main.py`.
-13. `scripts/run_pipeline.py`, `docs/data_dictionary.md`, `reports/...md`, `README.md`, final
+12. `scripts/run_pipeline.py`, `docs/data_dictionary.md`, `reports/...md`, `README.md`, final
     end-to-end run via the pipeline script.
 
 ## Verification
@@ -199,8 +191,7 @@ pandas, numpy, scikit-learn, lightgbm, xgboost, shap, statsmodels, ruptures, mat
 - Generator output: row counts, fault-episode count, injected data-quality issue counts land in
   target ranges (asserted, not eyeballed).
 - Each model notebook: metrics computed and sane (AUC > 0.5, no NaN leakage), artifacts saved.
-- `streamlit run dashboard/app.py` and `uvicorn api.main:app` launch cleanly; `/health` and
-  `/predict_failure` respond correctly to a sample payload before calling the build done.
+- `streamlit run dashboard/app.py` launches cleanly before calling the build done.
 
 ## Assumptions (explicit, documented in README + report)
 - All data synthetic, disclosed clearly — patterns engineered to be *learnable and physically
@@ -209,6 +200,5 @@ pandas, numpy, scikit-learn, lightgbm, xgboost, shap, statsmodels, ruptures, mat
 - `weather.csv` added beyond the brief's 3 datasets — real BMS deployments commonly use a weather
   feed; documented as additive scope, not a deviation from the required 3.
 - statsmodels in place of Prophet (Windows build friction); XGBoost as primary forecaster.
-- "GraphQL" bonus interpreted as graph-based query capability via NetworkX, not a literal server.
 - Effort/depth allocated per rubric weighting: Predictive Modeling and Connectivity get the most
   rigor; Forecasting/Anomaly solid but leaner.
