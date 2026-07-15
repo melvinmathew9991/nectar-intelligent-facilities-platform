@@ -11,7 +11,7 @@ interactive dashboard with live prediction scoring.
 
 | Task | Approach | Headline result |
 |---|---|---|
-| 1. EDA | Distributions, temporal, failure & energy drivers | Faults preceded by a 1.5× vibration lift in the 24h window; energy driven by outdoor temp + occupancy |
+| 1. EDA | Distributions, temporal, failure & energy drivers | Faults preceded by a 1.48× vibration lift in the 24h window; energy driven by outdoor temp + occupancy |
 | 2. Predictive Maintenance | RandomForest (selected by PR-AUC) vs. LightGBM/XGBoost/LogisticRegression, 24h-ahead | **Precision 0.90, Recall 0.75, ROC-AUC 0.896, PR-AUC 0.777** |
 | 3. Energy Forecasting | XGBoost (primary) vs. Holt-Winters (baseline), day-ahead, weather-exogenous | **MAPE 9.27%** (XGBoost) vs 161% (baseline) |
 | 4. Anomaly Detection | Statistical (seasonal MAD-z) + Isolation Forest + CUSUM + change-point | IsoForest anomalies **2.5×** more frequent within 24h of a fault |

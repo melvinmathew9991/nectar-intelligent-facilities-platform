@@ -27,7 +27,7 @@ Everything is built, executed for real (not hand-written), and independently ver
 
 - [x] Domain-grounded synthetic data generator — 151 assets, 1.96M telemetry rows,
       6 fault archetypes, 4 planted data-quality issues, fully seeded (`SEED=42`)
-- [x] Task 1 EDA — notebook executed, real findings (1.50× vibration lift before faults,
+- [x] Task 1 EDA — notebook executed, real findings (1.48× vibration lift before faults,
       age-correlated fault rate, weather/occupancy-driven energy)
 - [x] Task 2 Predictive Maintenance — 4 models compared by PR-AUC, RandomForest selected
       (Precision 0.90 / Recall 0.75 / ROC-AUC 0.896), SHAP + error analysis

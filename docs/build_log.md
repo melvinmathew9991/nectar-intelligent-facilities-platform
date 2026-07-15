@@ -54,7 +54,7 @@ never hand-written).
 24h window (`rolling(144).max()`), which folds in 24h of post-fault recovery alongside
 the real pre-fault ramp, diluting the finding to a barely-there 1.07× lift. Fixed to a
 genuinely forward-looking window (matching Task 2's actual prediction framing) — the
-real lift is 1.50×, a much more honest and useful number.
+real lift is 1.48×, a much more honest and useful number.
 
 ---
 

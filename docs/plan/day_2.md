@@ -41,5 +41,5 @@ Documented, visualized understanding of the dataset, plus the shared feature lay
 remaining modeling tasks depend on.
 
 See `docs/build_log.md` §2 for the real bug found and fixed here (a backward-looking
-"near fault" window that diluted the vibration-lift finding from 1.50× down to a
+"near fault" window that diluted the vibration-lift finding from 1.48× down to a
 barely-there 1.07×).

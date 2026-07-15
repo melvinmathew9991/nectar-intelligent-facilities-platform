@@ -33,7 +33,7 @@ distinct Chiller power distributions per site — the weather-driven coupling wo
 end-to-end, not just at the generator level.
 
 **What drives failures:** vibration in the **forward-looking** 24h window before a fault
-is **1.48× higher** than normal operation (3.27 vs 2.18 mm/s) — a genuine, measurable
+is **1.48× higher** than normal operation (3.23 vs 2.18 mm/s) — a genuine, measurable
 precursor, not decorative noise. Fault rate also rises monotonically with asset age
 (0.062% → 0.099% across four age brackets), a legitimate wear-out effect built into the
 generator's fault-episode sampling, not just its baseline signal offset.
