@@ -207,6 +207,21 @@ surfaced a few things worth fixing:
   GitHub's hard size limit (`sensor_telemetry.csv`, 169MB) or close enough to be risky
   (`dashboard/anomalies.csv`, 95MB) — both fully reproducible via
   `python scripts/run_pipeline.py`.
+
+---
+
+## 11. Post-submission: FastAPI end-to-end tests
+
+After the initial submission (§9-10), the test suite was audited and found to cover
+Task 2/5 logic and the data generator thoroughly, but not `api/main.py` itself —
+Bonus B had only been verified manually (curl/Swagger). `tests/test_api.py` was added:
+9 tests against the live app via FastAPI's `TestClient` (`/health`, `/`,
+`/predict_failure` for each rotating asset type, unknown-asset 404, non-rotating-asset
+400, and the two graph endpoints incl. their 404 paths) — the same code path a real
+HTTP client hits, not a mocked model. Skipped automatically if the full pipeline hasn't
+been run yet (needs `data/raw/sensor_telemetry.csv` + `models/*.pkl`). Suite total:
+27 -> 37, all passing. `README.md`, `PROJECT_STATUS.md`, and `reports/report.md`
+updated to the new count.
 - Leftover session/reference material unrelated to the actual deliverable (a prior
   session log referencing the separate, unrelated project mentioned in §0, and a
   redundant copy of the brief) was removed entirely.

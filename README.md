@@ -90,7 +90,7 @@ D:\Nectar\
 ├── notebooks/                     narrated analysis, 01 (data gen) -> 06 (connectivity)
 ├── scripts/
 │   └── run_pipeline.py             one-command headless reproduction
-├── tests/                          27 tests: data generation, feature leakage, graph queries
+├── tests/                          37 tests: data generation, feature leakage, graph queries, API e2e
 ├── models/                         predictive_maintenance.pkl, asset_graph.pkl
 ├── dashboard/app.py                Streamlit -- Bonus A
 ├── api/main.py                     FastAPI -- Bonus B
@@ -191,8 +191,10 @@ from there — no copy-pasted preprocessing anywhere in the repo.
 ## Verification
 
 ```bash
-pytest tests/ -v              # 27 tests: generator output ranges/counts, feature
-                               # leakage guards, graph query correctness on a fixture
+pytest tests/ -v              # 37 tests: generator output ranges/counts, feature
+                               # leakage guards, graph query correctness on a fixture,
+                               # and FastAPI end-to-end tests (health/predict/graph
+                               # endpoints, requires a full pipeline run first)
 python scripts/run_pipeline.py  # full headless run; confirms every artifact the
                                  # dashboard/API need gets produced without Jupyter
 ```

@@ -5,7 +5,7 @@ is, how it's built, what's done, and what's left — without re-reading the whol
 re-deriving decisions already made. If picking this project back up in a new session,
 read this file first.
 
-**Last updated:** 2026-07-14. **Status: build complete, tested, verified, cleaned, pushed.**
+**Last updated:** 2026-07-15. **Status: build complete, tested, verified, cleaned, pushed.**
 **Deadline:** 2026-07-14 (5 calendar days from receipt on 2026-07-09) — submitted.
 
 ---
@@ -39,7 +39,8 @@ Everything is built, executed for real (not hand-written), and independently ver
 - [x] Bonus A: Streamlit dashboard — live model scoring, verified running headless
 - [x] Bonus B: FastAPI — `/predict_failure` accepts raw telemetry, verified live
       end-to-end (health, predictions, graph endpoints, error handling)
-- [x] 27/27 automated tests passing (`pytest tests/`)
+- [x] 37/37 automated tests passing (`pytest tests/`) -- including 9 FastAPI
+      end-to-end tests (`tests/test_api.py`) added after the initial submission
 - [x] All 6 notebooks confirmed executed (checked programmatically: `execution_count`
       populated, zero error outputs — not eyeballed)
 - [x] `scripts/run_pipeline.py` — one-command headless reproduction, verified to produce
@@ -61,8 +62,9 @@ pushed to the remote:
 - `session-5-bonuses-docs`
 
 Remote: `https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform.git`.
-`main` is up to date with `origin/main`. `pytest tests/` → 27/27 passing (last verified
-2026-07-14). Nothing outstanding — the submission is complete and pushed.
+`main` is up to date with `origin/main`. `pytest tests/` → 37/37 passing (last verified
+2026-07-15, after adding `tests/test_api.py`'s 9 FastAPI end-to-end tests). Nothing
+outstanding — the submission is complete and pushed.
 
 ## 4. Architecture (condensed — full detail in `README.md`)
 
@@ -97,7 +99,7 @@ Installable as a package (`pip install -e .`) via `pyproject.toml`.
 ## 6. Quick verification (run these to confirm nothing has drifted)
 
 ```bash
-pytest tests/ -v                     # expect 27 passed
+pytest tests/ -v                     # expect 37 passed
 python scripts/run_pipeline.py       # expect ~5 min, metrics matching README's TL;DR table
 ```
 
