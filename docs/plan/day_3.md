@@ -14,7 +14,7 @@ two that most directly demonstrate modeling judgment, not just pipeline plumbing
 - `forecasting.py` + `notebooks/04_energy_forecasting.ipynb` — XGBoost primary model with
   weather-exogenous regressors vs. a walk-forward Holt-Winters baseline, evaluated over a
   trailing 2-week backtest window.
-- Save `models/predictive_maintenance.pkl` for the dashboard/API to consume on Day 5.
+- Save `models/predictive_maintenance.pkl` for the dashboard to consume on Day 5.
 
 ## Files touched
 

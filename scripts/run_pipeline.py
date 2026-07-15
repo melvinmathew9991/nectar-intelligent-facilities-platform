@@ -1,7 +1,7 @@
 """
 One-command, headless reproduction of the full Nectar pipeline:
 generate -> preprocess -> validate -> train Task 2 model -> run Task 3/4 ->
-build Task 5 graph -> save every artifact the dashboard/API depend on.
+build Task 5 graph -> save every artifact the dashboard depends on.
 
 Run:  python scripts/run_pipeline.py
 (Does NOT require Jupyter -- the notebooks are the narrated, business-facing

@@ -25,7 +25,7 @@ D:\Nectar\
     data_generation.py         orchestrates metadata, connectivity, and physics-grounded telemetry generation
     physics.py                 per-asset-type signal models (chiller/AHU/pump/meter/env-sensor), fault archetypes, graph-coupled load propagation
     preprocessing.py           missing-value handling, cleaning, resampling utilities
-    features.py                 shared feature-engineering fns (rolling stats, lags) used by training AND API
+    features.py                 shared feature-engineering fns (rolling stats, lags) used by training AND the dashboard
     maintenance_model.py       train/eval predictive maintenance model, SHAP, artifact saving
     forecasting.py              energy forecasting models (statsmodels baseline + XGBoost w/ weather regressor)
     anomaly.py                   multi-method anomaly detection framework
@@ -126,7 +126,7 @@ Distributions per sensor & asset_type, missing-value analysis, temporal patterns
 
 ## 3. Task 2 — Predictive Maintenance (`src/nectar/maintenance_model.py`, notebook 03)
 - **Label**: fault within next 24h, from the archetype-driven fault episodes.
-- **Features** (`features.py`, shared with API): rolling mean/std/min/max/slope at 1h/6h/24h per sensor, rate-of-change, asset age, asset_type, site/building, operating_mode, occupancy,
+- **Features** (`features.py`, shared with the dashboard): rolling mean/std/min/max/slope at 1h/6h/24h per sensor, rate-of-change, asset age, asset_type, site/building, operating_mode, occupancy,
 missingness flags. Archetype-awareness means slope-based features should have real separating power (e.g. static-pressure slope for AHUs, vibration slope for pumps/chillers).
 - **Split**: time-based (train ~70 days / test trailing ~20 days) — no random shuffle.
 - **Imbalance**: scale_pos_weight/class_weight; report PR-AUC alongside ROC-AUC.

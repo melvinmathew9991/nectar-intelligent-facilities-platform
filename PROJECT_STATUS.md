@@ -61,11 +61,14 @@ first 5 via direct merge, the 6th via a reviewed GitHub PR), then pushed to the 
   maintenance, merged via
   [PR #1](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/pull/1)
 
-A later scope-trim removed the deployment bonus and the graph-query bonus framing,
-keeping the dashboard as the one bonus deliverable.
+One further branch was merged after that:
+- `trim-bonus-scope` — removed the deployment bonus and the graph-query bonus framing,
+  keeping the dashboard as the one bonus deliverable, merged via
+  [PR #2](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/pull/2)
 
 Remote: `https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform.git`.
-`pytest tests/` → 27/27 passing (last verified 2026-07-15).
+Local `main` is up to date with `origin/main`. `pytest tests/` → 27/27 passing (last
+verified 2026-07-15).
 
 ## 4. Architecture (condensed — full detail in `README.md`)
 
