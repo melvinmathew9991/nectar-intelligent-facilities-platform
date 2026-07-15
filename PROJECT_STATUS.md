@@ -53,17 +53,20 @@ Everything is built, executed for real (not hand-written), and independently ver
 
 ## 3. Git — done
 
-All 5 session branches were created, committed, and merged into `main` in order, then
-pushed to the remote:
+All 6 session branches were created, committed, and merged into `main` in order (the
+first 5 via direct merge, the 6th via a reviewed GitHub PR), then pushed to the remote:
 - `session-1-data-foundation`
 - `session-2-eda-features`
 - `session-3-maintenance-forecasting`
 - `session-4-anomaly-connectivity`
 - `session-5-bonuses-docs`
+- `session-6-api-tests-docs` — post-submission addition: `tests/test_api.py` (9 FastAPI
+  end-to-end tests) + doc updates for the resulting 27 -> 37 test count, merged via
+  [PR #1](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/pull/1)
 
 Remote: `https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform.git`.
-`main` is up to date with `origin/main`. `pytest tests/` → 37/37 passing (last verified
-2026-07-15, after adding `tests/test_api.py`'s 9 FastAPI end-to-end tests). Nothing
+Local `main` is up to date with `origin/main` (fast-forwarded to `f9646cc` after the PR
+#1 merge). `pytest tests/` → 37/37 passing (last verified 2026-07-15). Nothing
 outstanding — the submission is complete and pushed.
 
 ## 4. Architecture (condensed — full detail in `README.md`)
