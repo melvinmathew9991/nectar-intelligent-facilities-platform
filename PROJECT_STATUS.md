@@ -37,7 +37,10 @@ Everything is built, executed for real (not hand-written), and independently ver
 - [x] Task 5 Connectivity Analysis — full graph, brief's example queries, all 4 planted
       DQ issues found
 - [x] Bonus: Streamlit dashboard — live model scoring, verified running headless
-- [x] 27/27 automated tests passing (`pytest tests/`)
+- [x] 49/49 automated tests passing (`pytest tests/`) — extended post-submission with
+      `test_anomaly.py`, `test_forecasting.py`, `test_maintenance_model.py` (22 tests)
+      to close a coverage gap: those three modules had shipped in the pipeline with
+      zero tests
 - [x] All 6 notebooks confirmed executed (checked programmatically: `execution_count`
       populated, zero error outputs — not eyeballed)
 - [x] `scripts/run_pipeline.py` — one-command headless reproduction, verified to produce
@@ -67,7 +70,7 @@ One further branch was merged after that:
   [PR #2](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/pull/2)
 
 Remote: `https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform.git`.
-Local `main` is up to date with `origin/main`. `pytest tests/` → 27/27 passing (last
+Local `main` is up to date with `origin/main`. `pytest tests/` → 49/49 passing (last
 verified 2026-07-15).
 
 ## 4. Architecture (condensed — full detail in `README.md`)
@@ -103,7 +106,7 @@ package (`pip install -e .`) via `pyproject.toml`.
 ## 6. Quick verification (run these to confirm nothing has drifted)
 
 ```bash
-pytest tests/ -v                     # expect 27 passed
+pytest tests/ -v                     # expect 49 passed
 python scripts/run_pipeline.py       # expect ~5 min, metrics matching README's TL;DR table
 ```
 
