@@ -197,6 +197,7 @@ environment's ~8GB RAM ceiling training 4 models concurrently.
 
 `python scripts/run_pipeline.py` reproduces every number in this report headlessly in
 under 5 minutes — verified to match the individually-executed notebooks' metrics
-exactly on a full from-scratch data regeneration (`SEED=42`). 27 automated tests
-(`pytest tests/`) assert generator output ranges, feature-leakage guards, and graph
-query correctness.
+exactly on a full from-scratch data regeneration (`SEED=42`). 37 automated tests
+(`pytest tests/`) assert generator output ranges, feature-leakage guards, graph
+query correctness, and FastAPI end-to-end behavior (health, predictions, graph
+endpoints, error handling).
