@@ -1,8 +1,9 @@
 """
-Shared feature engineering -- imported by BOTH the Task 2 training notebook
-AND `api/main.py` (train/serve parity: exactly one implementation of the
-feature contract). All rolling/lag features are computed per-asset, sorted
-by time, using only past-or-present information -- no look-ahead leakage.
+Shared feature engineering -- imported by the Task 2 training notebook,
+scripts/run_pipeline.py, and the dashboard's live scoring (exactly one
+implementation of the feature contract). All rolling/lag features are
+computed per-asset, sorted by time, using only past-or-present information
+-- no look-ahead leakage.
 """
 from __future__ import annotations
 import numpy as np

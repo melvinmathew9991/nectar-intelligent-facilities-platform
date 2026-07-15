@@ -12,7 +12,7 @@ just at the very end.
 | 2 | EDA + shared feature engineering | `session-2-eda-features` | [day_2.md](day_2.md) |
 | 3 | Predictive Maintenance + Energy Forecasting (Tasks 2-3) | `session-3-maintenance-forecasting` | [day_3.md](day_3.md) |
 | 4 | Anomaly Detection + Connectivity Analysis (Tasks 4-5) | `session-4-anomaly-connectivity` | [day_4.md](day_4.md) |
-| 5 | Bonuses, documentation, final QA | `session-5-bonuses-docs` | [day_5.md](day_5.md) |
+| 5 | Bonus, documentation, final QA | `session-5-bonuses-docs` | [day_5.md](day_5.md) |
 
 Each day's file lists that day's goal, tasks, exact files touched, and end-of-day
 deliverable — deliberately scoped so it can be read (and committed) as a self-contained
@@ -31,6 +31,6 @@ unit. For what actually went wrong along the way and how it was fixed, see
   reference the fault/degradation understanding built on Day 3; sequencing them after
   means those cross-task references are to *already-verified* results, not forward
   promises.
-- **Bonuses last, not first** — both bonus apps are thin consumers of artifacts from
-  Tasks 2, 4, and 5; building them earlier would have meant building against
+- **Bonus last, not first** — the bonus app is a thin consumer of artifacts from
+  Tasks 2, 4, and 5; building it earlier would have meant building against
   not-yet-finalized model/graph formats and redoing integration work later.

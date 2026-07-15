@@ -10,8 +10,8 @@ Nectar's Intelligent Facilities Platform ingests continuous sensor telemetry fro
 interconnected building assets (Chillers, AHUs, Pumps, Energy Meters, Environmental
 Sensors) across multiple commercial sites. The brief asks for five analytical
 capabilities — EDA, predictive maintenance, energy forecasting, anomaly detection, and
-multi-asset connectivity analysis — plus two optional bonuses (dashboard, API
-deployment), built on data the brief itself flagged was not actually supplied. Rather
+multi-asset connectivity analysis — plus an optional operations dashboard, built on data
+the brief itself flagged was not actually supplied. Rather
 than a generic noise-based simulator, this submission builds a **domain-grounded
 synthetic generator**: per-asset-type physical signal models (ISO 10816-consistent
 vibration bands, realistic chilled-water/duct-static/pump-discharge pressure ranges),
@@ -76,7 +76,6 @@ maintenance-scheduling use case operating on hours-to-days.
 
 **Business impact:** ops teams get a full day's notice to schedule intervention at this
 precision/recall trade-off, reducing unplanned downtime and emergency-repair cost.
-Deployed live via `POST /predict_failure` (see §7).
 
 **Honest limitation:** metrics reflect a cleaner synthetic degradation ramp than real
 equipment noise; the *pipeline and feature strategy* transfer to real telemetry, not
@@ -158,7 +157,7 @@ AHUs + 3 EnvSensors) — real operational risk, not just topology, since Task 1 
 cooling load is genuinely occupancy/temperature driven. Query functions
 (`get_connected_assets`, `get_downstream_impact`, `get_upstream_dependencies`,
 `get_assets_by_site`, `get_isolated_assets`) match the brief's own example queries
-exactly and are exposed both in the notebook and via `GET /assets/{id}/downstream_impact`.
+exactly and are exposed in the notebook.
 
 **Recommendation:** prioritize redundancy investment on the highest-downstream-count
 Chillers/Pumps; flag downstream sensors during an upstream fault so operators triage the
@@ -166,21 +165,12 @@ root cause first, not secondary symptoms.
 
 ---
 
-## 7. Bonus Deliverables
+## 7. Bonus Deliverable
 
 **Streamlit dashboard** (`dashboard/app.py`): 6 sections including **live** failure
 scoring (the saved model is actually invoked against each asset's current feature
 vector, not just confirmed present) and an interactive connectivity/failure-impact
 explorer. Verified running headlessly with no server-side exceptions.
-
-**FastAPI service** (`api/main.py`): `POST /predict_failure` accepts **raw telemetry**
-— either an `asset_id` (scores against stored history) or an explicit
-`telemetry_window` — with feature engineering running inside the endpoint via the same
-`features.py` module used in training (genuine train/serve parity), not a
-pre-engineered 82-feature dict. `GET /assets/{id}/downstream_impact` and
-`/upstream_dependencies` tie Task 5 into the API. Verified end-to-end against a live
-server: 200 responses for valid Chiller/AHU predictions, 404 for unknown assets, 400
-with an informative message for non-rotating asset types.
 
 ---
 
@@ -188,16 +178,14 @@ with an informative message for non-rotating asset types.
 
 Synthetic data with an added `weather.csv` exogenous feed; Statsmodels over Prophet
 (Windows build friction, no material accuracy cost); LSTM/TFT deprioritized (no clear
-accuracy edge at this data volume); "GraphQL" bonus interpreted as graph-query
-*capability* via NetworkX rather than literal server infrastructure; a memory-budgeted
-300k-row training subsample for Task 2 (documented, not silent) given this
-environment's ~8GB RAM ceiling training 4 models concurrently.
+accuracy edge at this data volume); a memory-budgeted 300k-row training subsample for
+Task 2 (documented, not silent) given this environment's ~8GB RAM ceiling training 4
+models concurrently.
 
 ## 9. Reproducibility
 
 `python scripts/run_pipeline.py` reproduces every number in this report headlessly in
 under 5 minutes — verified to match the individually-executed notebooks' metrics
-exactly on a full from-scratch data regeneration (`SEED=42`). 37 automated tests
-(`pytest tests/`) assert generator output ranges, feature-leakage guards, graph
-query correctness, and FastAPI end-to-end behavior (health, predictions, graph
-endpoints, error handling).
+exactly on a full from-scratch data regeneration (`SEED=42`). 27 automated tests
+(`pytest tests/`) assert generator output ranges, feature-leakage guards, and graph
+query correctness.

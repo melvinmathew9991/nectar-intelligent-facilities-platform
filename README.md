@@ -3,7 +3,7 @@
 End-to-end IoT analytics solution for Nectar's Intelligent Facilities Platform: EDA,
 predictive maintenance, energy forecasting, anomaly detection, and multi-asset
 connectivity analysis on synthetic commercial-building sensor telemetry — plus an
-interactive dashboard and a live prediction API.
+interactive dashboard with live prediction scoring.
 
 ---
 
@@ -16,8 +16,7 @@ interactive dashboard and a live prediction API.
 | 3. Energy Forecasting | XGBoost (primary) vs. Holt-Winters (baseline), day-ahead, weather-exogenous | **MAPE 9.27%** (XGBoost) vs 161% (baseline) |
 | 4. Anomaly Detection | Statistical (seasonal MAD-z) + Isolation Forest + CUSUM + change-point | IsoForest anomalies **2.5×** more frequent within 24h of a fault |
 | 5. Connectivity | NetworkX directed graph | Hierarchy, failure propagation, full DQ audit — all 4 planted issues found |
-| Bonus A | Streamlit dashboard | 6-section ops dashboard incl. **live** failure scoring |
-| Bonus B | FastAPI | `POST /predict_failure` accepts **raw telemetry**, not pre-engineered features |
+| Bonus | Streamlit dashboard | 6-section ops dashboard incl. **live** failure scoring |
 
 All numbers above are reproduced by `python scripts/run_pipeline.py` — a genuine
 headless, one-command run, not just notebook output (verified: pipeline metrics match
@@ -47,17 +46,14 @@ pip install -r requirements.txt
 pip install -e .
 
 # 3. Run the full pipeline (generates data, trains all models, builds the graph,
-#    saves every artifact the dashboard/API depend on) -- ~5 minutes
+#    saves every artifact the dashboard depends on) -- ~5 minutes
 python scripts/run_pipeline.py
 
 # 4. OR run the narrated notebooks in order (same underlying src/nectar/ logic)
 jupyter lab notebooks/     # 01 -> 06
 
-# 5. (Bonus A) Launch the dashboard
+# 5. (Bonus) Launch the dashboard
 streamlit run dashboard/app.py            # http://localhost:8501
-
-# 6. (Bonus B) Launch the API
-uvicorn api.main:app --reload             # docs at http://localhost:8000/docs
 ```
 
 Verified on **Python 3.13.14** (`.python-version`). All dependencies including SHAP,
@@ -76,7 +72,7 @@ D:\Nectar\
 │   ├── raw/                      generated: telemetry, metadata, connectivity, weather
 │   └── processed/                 cleaned/feature-engineered parquet output
 ├── src/nectar/                    single source of truth -- imported by every notebook,
-│   ├── config.py                   scripts/run_pipeline.py, dashboard/app.py, api/main.py
+│   ├── config.py                   scripts/run_pipeline.py, dashboard/app.py
 │   ├── weather.py                 per-site synthetic outdoor temp/humidity generator
 │   ├── physics.py                 per-asset-type signal models, fault archetypes
 │   ├── data_generation.py         orchestrates metadata/connectivity/telemetry generation
@@ -90,10 +86,9 @@ D:\Nectar\
 ├── notebooks/                     narrated analysis, 01 (data gen) -> 06 (connectivity)
 ├── scripts/
 │   └── run_pipeline.py             one-command headless reproduction
-├── tests/                          37 tests: data generation, feature leakage, graph queries, API e2e
+├── tests/                          27 tests: data generation, feature leakage, graph queries
 ├── models/                         predictive_maintenance.pkl, asset_graph.pkl
-├── dashboard/app.py                Streamlit -- Bonus A
-├── api/main.py                     FastAPI -- Bonus B
+├── dashboard/app.py                Streamlit -- Bonus
 ├── docs/
 │   ├── data_dictionary.md          per-asset-type unit/range/standard reference
 │   ├── build_log.md                chronological build log: bugs found, fixes, decisions
@@ -107,13 +102,13 @@ D:\Nectar\
 
 **Data flow:** `data_generation.py` (seeded, deterministic) → 4 CSVs in `data/raw/` →
 `preprocessing.py` (load + validate + impute) → `features.py` (shared, leak-free
-engineering) → the 5 tasks → saved artifacts → dashboard & API consume those artifacts
+engineering) → the 5 tasks → saved artifacts → the dashboard consumes those artifacts
 directly (rebuilding the connectivity graph live from the CSVs, or loading the pickled
 version — both paths work).
 
 **Design principle:** cleaning and feature logic live in `src/nectar/` exactly once.
-Every notebook, `scripts/run_pipeline.py`, `dashboard/app.py`, and `api/main.py` imports
-from there — no copy-pasted preprocessing anywhere in the repo.
+Every notebook, `scripts/run_pipeline.py`, and `dashboard/app.py` import from there —
+no copy-pasted preprocessing anywhere in the repo.
 
 ---
 
@@ -150,14 +145,7 @@ from there — no copy-pasted preprocessing anywhere in the repo.
    LSTM/Temporal Fusion Transformer were considered and deprioritized — added training
    complexity with no clear accuracy edge at this data volume (9 buildings × ~2,000
    hourly points each).
-10. **"GraphQL" bonus** interpreted as graph-based query *capability* via NetworkX
-    (`get_connected_assets`, `get_downstream_impact`, etc. — these map directly to what
-    GraphQL resolvers would expose) rather than standing up a literal GraphQL server,
-    which would add infrastructure without analytical depth for this exercise.
-11. **`/predict_failure` accepts raw telemetry**, not a pre-engineered feature dict — an
-    explicit design goal from the start (see `api/main.py`), since a production endpoint
-    receiving live sensor data would need to run feature engineering internally.
-12. Manufacturer names are generic placeholder labels, not real-brand claims.
+10. Manufacturer names are generic placeholder labels, not real-brand claims.
 
 ---
 
@@ -191,12 +179,10 @@ from there — no copy-pasted preprocessing anywhere in the repo.
 ## Verification
 
 ```bash
-pytest tests/ -v              # 37 tests: generator output ranges/counts, feature
-                               # leakage guards, graph query correctness on a fixture,
-                               # and FastAPI end-to-end tests (health/predict/graph
-                               # endpoints, requires a full pipeline run first)
+pytest tests/ -v              # 27 tests: generator output ranges/counts, feature
+                               # leakage guards, graph query correctness on a fixture
 python scripts/run_pipeline.py  # full headless run; confirms every artifact the
-                                 # dashboard/API need gets produced without Jupyter
+                                 # dashboard needs gets produced without Jupyter
 ```
 
 Every notebook (01–06) was executed in place (`jupyter nbconvert --execute`) — outputs
