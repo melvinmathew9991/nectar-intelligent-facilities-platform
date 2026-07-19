@@ -180,26 +180,135 @@ st.divider()
 # ---------------- 6. Asset connectivity & failure impact ----------------
 st.subheader("Asset connectivity & failure impact")
 site_nodes = gmod.get_assets_by_site(G, site)
-subG = G.subgraph(site_nodes)
 
-sel = st.selectbox("Trace failure impact from asset", sorted(site_nodes))
-downstream = gmod.get_downstream_impact(G, sel)
-st.write(f"If **{sel}** fails, **{len(downstream)}** downstream assets are impacted: "
-         f"{', '.join(downstream) if downstream else 'none (leaf asset)'}")
+ALL_OPTION = "— All assets (full site map) —"
+sel = st.selectbox("Trace failure impact from asset",
+                    [ALL_OPTION] + sorted(site_nodes))
+
+if sel == ALL_OPTION:
+    # Overview mode: the real, full connectivity map for this site, before
+    # narrowing to any one asset's trace. No node is "selected" here, so
+    # every dot keeps its normal asset-type color -- black/amber only
+    # appear once a specific asset is picked below.
+    downstream = []
+    focus_nodes = set(site_nodes)
+    subG = G.subgraph(focus_nodes)
+    st.write(f"Showing the full connectivity map for **{site}** -- "
+             f"**{subG.number_of_nodes()}** assets, **{subG.number_of_edges()}** connections. "
+             f"Pick a specific asset above to trace its failure impact.")
+else:
+    downstream = gmod.get_downstream_impact(G, sel)
+    st.write(f"If **{sel}** fails, **{len(downstream)}** downstream assets are impacted: "
+             f"{', '.join(downstream) if downstream else 'none (leaf asset)'}")
+    # Draw only what's relevant to this trace -- the selected asset, everything
+    # downstream of it, and its immediate parent(s) for context -- rather than
+    # the entire site (~50 nodes) every time, which is what made the diagram
+    # crowded regardless of layout/spacing tuning.
+    focus_nodes = {sel} | set(downstream) | set(G.predecessors(sel))
+    subG = G.subgraph(focus_nodes)
 
 tc = {"Chiller": "#e74c3c", "AHU": "#3498db", "Pump": "#2ecc71",
       "EnvSensor": "#95a5a6", "EnergyMeter": "#9b59b6"}
+SELECTED_COLOR = "#000000"  # distinct from every asset-type color above, incl. Chiller's red
 dset = set(downstream)
-colors = ["#e74c3c" if n == sel else ("#f39c12" if n in dset
+colors = [SELECTED_COLOR if n == sel else ("#f39c12" if n in dset
           else tc.get(G.nodes[n]["asset_type"], "#333")) for n in subG.nodes]
 try:
     pos = nx.nx_agraph.graphviz_layout(subG, prog="dot")
 except Exception:
-    pos = nx.spring_layout(subG, k=0.9, seed=42)
-fig, ax = plt.subplots(figsize=(12, 7))
-nx.draw(subG, pos, ax=ax, node_color=colors, node_size=500, font_size=6,
-        with_labels=True, arrows=True, edge_color="#999")
-ax.set_title(f"{site} -- connectivity (red=selected, orange=downstream impact)")
+    # pygraphviz isn't installed in this environment, so this is the layout
+    # actually used -- k scaled up from the library default (1/sqrt(n)) and
+    # more iterations give real separation instead of a tightly packed clump.
+    pos = nx.spring_layout(subG, k=3.5 / (len(subG.nodes) ** 0.5), iterations=200, seed=42)
+# Figure scales with how many nodes are actually being shown now that the
+# view is scoped to the trace (1-18 nodes typically) instead of the whole
+# site (~50) -- a fixed large canvas would look sparse for a 1-3 node trace.
+n_nodes = max(len(subG.nodes), 1)
+fig_w = max(6.0, min(16.0, 2.5 + 0.7 * n_nodes))
+fig_h = max(4.5, min(11.0, 2.0 + 0.5 * n_nodes))
+fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+# Selected node drawn larger so it's the first thing the eye lands on, even
+# before reading color.
+node_sizes = [700 if n == sel else 450 for n in subG.nodes]
+nx.draw_networkx_nodes(subG, pos, ax=ax, node_color=colors, node_size=node_sizes)
+# Edges that carry the cascade (selected -> downstream, or downstream ->
+# further downstream) are colored amber to match the affected nodes, so the
+# failure visibly "flows" outward rather than just lighting up disconnected
+# dots. The upstream (parent -> selected) edge stays neutral gray.
+edge_colors, edge_widths = [], []
+for u, v in subG.edges():
+    if (u == sel or u in dset) and v in dset:
+        edge_colors.append("#f39c12")
+        edge_widths.append(1.8)
+    else:
+        edge_colors.append("#999")
+        edge_widths.append(0.6)
+nx.draw_networkx_edges(subG, pos, ax=ax, arrows=True, edge_color=edge_colors, width=edge_widths)
+# Labels offset above each node with a white backing box -- always legible
+# regardless of node color (in-node black text is invisible on black nodes).
+# A thin leader line ties each label back to its own dot, so which name
+# belongs to which node stays unambiguous even when two nodes sit close
+# together (a fixed uniform offset alone isn't enough at this density).
+xs = [x for x, _ in pos.values()]
+ys = [y for _, y in pos.values()]
+x_span = (max(xs) - min(xs)) or 1
+y_span = (max(ys) - min(ys)) or 1
+y_offset = 0.04 * y_span
+label_pos = {n: (x, y + y_offset) for n, (x, y) in pos.items()}
+
+# Push apart any two labels whose (estimated) text boxes still overlap after
+# the uniform offset above -- a fixed offset alone isn't enough once two
+# nodes/labels land close together. Leader lines below still point back to
+# each node's true position, so a label can move freely without becoming
+# ambiguous.
+char_w, label_h = 0.011 * x_span, 0.035 * y_span
+names = list(label_pos.keys())
+
+def _box(name):
+    lx, ly = label_pos[name]
+    w = char_w * len(name)
+    return lx - w / 2, lx + w / 2, ly - label_h / 2, ly + label_h / 2
+
+for _ in range(80):
+    moved = False
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            a, b = names[i], names[j]
+            ax0, ax1, ay0, ay1 = _box(a)
+            bx0, bx1, by0, by1 = _box(b)
+            if ax0 < bx1 and bx0 < ax1 and ay0 < by1 and by0 < ay1:
+                moved = True
+                axp, ayp = label_pos[a]
+                bxp, byp = label_pos[b]
+                dx, dy = bxp - axp, byp - ayp
+                dist = (dx ** 2 + dy ** 2) ** 0.5 or 0.01
+                ux, uy = dx / dist, dy / dist
+                push = 0.02 * max(x_span, y_span)
+                label_pos[a] = (axp - ux * push / 2, ayp - uy * push / 2)
+                label_pos[b] = (bxp + ux * push / 2, byp + uy * push / 2)
+    if not moved:
+        break
+
+for n, (x, y) in pos.items():
+    lx, ly = label_pos[n]
+    ax.plot([x, lx], [y, ly], color="#aaaaaa", lw=0.5, zorder=1)
+nx.draw_networkx_labels(subG, label_pos, ax=ax, font_size=7, font_color="black",
+                         bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=0.5))
+ax.axis("off")
+title = (f"{site} -- full asset connectivity map" if sel == ALL_OPTION
+         else f"{sel} -- failure impact trace (black=selected, amber=downstream impact)")
+ax.set_title(title)
+
+# On-graph legend -- so the color key is readable directly from the figure
+# (e.g. a screenshot or recording) without relying on a separate caption.
+legend_entries = [(atype, color) for atype, color in tc.items()]
+if sel != ALL_OPTION:
+    legend_entries += [("Selected (failed)", SELECTED_COLOR), ("Downstream impact", "#f39c12")]
+legend_handles = [plt.Line2D([0], [0], marker="o", color="w", markerfacecolor=color,
+                              markersize=9, label=label) for label, color in legend_entries]
+ax.legend(handles=legend_handles, loc="lower left", bbox_to_anchor=(0, -0.05),
+          frameon=True, fontsize=8, ncol=len(legend_entries))
+
 st.pyplot(fig)
 
 st.caption("Nectar Data Scientist Challenge -- dashboard demo.")
