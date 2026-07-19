@@ -162,11 +162,15 @@ OCCUPANCY_END_HOUR = 18
 WEEKEND_OCCUPANCY_FACTOR = 0.05
 
 # ---------------------------------------------------------------------------
-# Fault archetypes (rotating equipment only): 150-250 episodes total,
-# each with a 6-48h leading-indicator degradation window before a short
-# fault_flag=1 event.
+# Fault archetypes (rotating equipment only): each episode has a leading-
+# indicator degradation ramp (FAULT_RAMP_HOURS, upper bound exclusive -- actual
+# max is 47h, not 48) before a short fault_flag=1 event.
 # ---------------------------------------------------------------------------
-FAULT_TARGET_EPISODES = (150, 250)
+FAULT_TARGET_EPISODES = (150, 250)   # NOT wired into the generator as a target --
+                                       # only used as a loose tolerance band by
+                                       # test_fault_episode_count_in_range. Actual
+                                       # episode count is emergent from the
+                                       # per-asset age-driven binomial draw below.
 FAULT_RAMP_HOURS = (6, 48)
 FAULT_DURATION_HOURS = (1, 3)
 

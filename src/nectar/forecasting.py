@@ -62,6 +62,8 @@ def holt_winters_walk_forward(full_series: pd.Series, train_end_idx: int,
             fit = model.fit(optimized=True)
             preds[filled:filled + step] = np.clip(fit.forecast(step), 0, None)
         except Exception:
+            log.warning(f"Holt-Winters refit failed at origin={origin} -- "
+                        f"falling back to trailing-24h mean", exc_info=True)
             preds[filled:filled + step] = window[-24:].mean()
         origin += step
         filled += step

@@ -106,6 +106,18 @@ def test_forecast_lags_must_be_geq_horizon():
             horizon=24, lags=(1, 48))
 
 
+def test_forecast_lags_equal_to_horizon_is_accepted():
+    """min(lags) == horizon is the boundary case the assertion (>=) must
+    accept, not just reject below-horizon lags."""
+    tel = _synthetic_telemetry(n_hours=400)
+    weather = pd.DataFrame({
+        "site_id": ["CBE"] * 400, "timestamp": pd.date_range("2025-01-01", periods=400, freq="1h"),
+        "outdoor_temp": 25.0, "outdoor_humidity": 50.0,
+    })
+    df, feats = features.build_forecast_features(tel, weather, horizon=24, lags=(24, 48))
+    assert "lag_24" in feats
+
+
 def test_forecast_features_no_leakage_window():
     """roll_mean_{w} at time T must be computed strictly from data at or
     before T-horizon -- verify by checking the earliest valid row is at
@@ -123,7 +135,7 @@ def test_forecast_features_no_leakage_window():
 
 def test_trailing_window_matches_full_history():
     """The dashboard's live-scoring path (dashboard/app.py::load_live_failure_scores)
-    trims telemetry to a trailing 72h window before calling
+    trims telemetry to a trailing 36h window before calling
     build_maintenance_features, on the premise that every rolling/lag/slope
     feature there looks strictly backward within a <=24h window -- so the
     LAST row per asset (the only row live-scoring actually uses) is

@@ -34,8 +34,10 @@ the README.
 
 ## Fault Archetypes (rotating equipment only)
 
-Each fault episode is a **6–48h monotonic ramp** on the affected channel(s), then holds at
-peak severity for the flagged (`fault_flag=1`) window (1–3h) — the ramp rows themselves
+Each fault episode is a **6–47h monotonic ramp** (`config.FAULT_RAMP_HOURS = (6, 48)`,
+drawn via `rng.integers(*bounds)`, so the upper bound is exclusive) on the affected
+channel(s), then holds at peak severity for the flagged (`fault_flag=1`) window (1–3h) —
+the ramp rows themselves
 carry `fault_flag=0`, which is the entire point of predictive maintenance (learning to
 predict the flag from the *pre-flag* degradation signature).
 
@@ -48,18 +50,23 @@ predict the flag from the *pre-flag* degradation signature).
 | `cavitation` | Pump | vibration ↑, pressure ↓ | vibration + pressure instability |
 | `bearing_wear` | Pump | vibration ↑ | gradual vibration ramp |
 
-A Chiller/Pump fault also applies a smaller (25% scale) secondary effect to its **direct
+A Chiller fault also applies a smaller (25% scale) secondary effect to its **direct
 downstream children** via the connectivity graph over the same window (e.g. an AHU's
 supply temperature drifts up during its parent Chiller's fault) — this is what gives
-Task 5's failure-propagation analysis real telemetry evidence, not just topology.
+Task 5's failure-propagation analysis real telemetry evidence, not just topology. The
+generator attempts the same secondary effect for Pump faults, but never actually applies
+it in the generated data: a Pump's only downstream connectivity is its EnergyMeter
+submeter, which only mirrors `power_consumption`, and neither Pump fault archetype
+(`cavitation`, `bearing_wear`) touches that channel — so there is no channel for a Pump's
+secondary effect to propagate through. Only Chiller→AHU propagation occurs in practice.
 
 ## Standalone Anomalies (Task 4 target, independent of fault archetypes)
 
 | Type | Mechanism | Target |
 |---|---|---|
-| Power spike | 2–5 random hours per asset, 2.5–4× normal power | all active asset types |
+| Power spike | 2–4 random hours per asset, 2.5–4× normal power | all active asset types |
 | Slow drift | additive linear drift over a ~200h window | ~20% of assets, temperature channel |
-| Stuck sensor | flatlined value over a 3–12h window | ~5% of assets, vibration channel |
+| Stuck sensor | flatlined value over a 3–11h window | ~5% of assets, vibration channel |
 
 ## Data-Quality Fixtures (intentional, by design)
 

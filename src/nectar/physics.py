@@ -166,7 +166,9 @@ def generate_asset_baseline(asset_type: str, ctx: pd.DataFrame, age_years: float
 # arrays (same length as the ramp+duration window) to add onto baseline.
 # ---------------------------------------------------------------------------
 ARCHETYPE_EFFECTS = {
-    # channel: (direction, relative_magnitude as fraction of that channel's baseline range)
+    # channel: signed direction/weight (sign = direction of drift; magnitude is a
+    # relative weight, not a fraction of baseline range -- the actual absolute
+    # delta at ramp peak comes from ARCHETYPE_MAGNITUDE below)
     "refrigerant_leak":   {"pressure": -1.0, "temperature": 0.6, "power": -0.15},
     "condenser_fouling":  {"pressure": 1.0, "power": 0.35},
     "filter_clogging":    {"pressure": 1.0},

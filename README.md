@@ -86,7 +86,7 @@ D:\Nectar\
 ├── notebooks/                     narrated analysis, 01 (data gen) -> 06 (connectivity)
 ├── scripts/
 │   └── run_pipeline.py             one-command headless reproduction
-├── tests/                          49 tests: data generation, feature leakage, graph queries,
+├── tests/                          55 tests: data generation, feature leakage, graph queries,
 │                                    forecasting, anomaly detection, maintenance model
 ├── models/                         predictive_maintenance.pkl, asset_graph.pkl
 ├── dashboard/app.py                Streamlit -- Bonus
@@ -180,7 +180,7 @@ no copy-pasted preprocessing anywhere in the repo.
 ## Verification
 
 ```bash
-pytest tests/ -v              # 49 tests: generator output ranges/counts, feature
+pytest tests/ -v              # 55 tests: generator output ranges/counts, feature
                                # leakage guards, graph query correctness on a fixture,
                                # forecasting/anomaly/maintenance-model coverage
 python scripts/run_pipeline.py  # full headless run; confirms every artifact the

@@ -141,6 +141,7 @@ def changepoint_flags(telemetry: pd.DataFrame, metadata: pd.DataFrame,
         try:
             bkps = algo.predict(pen=penalty)
         except Exception:
+            log.warning(f"changepoint detection failed for asset {aid} -- skipping", exc_info=True)
             continue
         results[aid] = [hourly.index[i] for i in bkps[:-1]]   # drop final (series-end) breakpoint
     return results
