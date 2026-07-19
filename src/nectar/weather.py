@@ -82,8 +82,6 @@ def save_weather(df: pd.DataFrame, path: str | None = None) -> str:
 
 
 def plot_weather_sanity_check(df: pd.DataFrame, out_path: str | None = None) -> str:
-    import matplotlib
-    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     out_path = out_path or os.path.join(config.FIGURES_DIR, "00_weather_sanity.png")
@@ -108,6 +106,8 @@ def plot_weather_sanity_check(df: pd.DataFrame, out_path: str | None = None) -> 
 
 
 if __name__ == "__main__":
+    import matplotlib
+    matplotlib.use("Agg")
     weather_df = generate_weather()
     save_weather(weather_df)
     plot_weather_sanity_check(weather_df)

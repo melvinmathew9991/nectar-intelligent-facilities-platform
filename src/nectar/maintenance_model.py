@@ -7,6 +7,7 @@ scripts/run_pipeline.py -- exactly one copy of this logic.
 """
 from __future__ import annotations
 import os
+import warnings
 import joblib
 import numpy as np
 import pandas as pd
@@ -97,7 +98,14 @@ def train_models(Xtr, ytr, feats: list[str]) -> dict:
 
 def _proba(entry: dict, X: np.ndarray) -> np.ndarray:
     Xt = entry["scaler"].transform(X) if entry["scaler"] is not None else X
-    return entry["model"].predict_proba(Xt)[:, 1]
+    # LightGBM's sklearn wrapper always populates feature_names_in_ (auto-named
+    # "Column_N" even when fit on a plain ndarray), so predicting from the same
+    # ndarray type trips sklearn's fit/predict feature-name mismatch check --
+    # a benign library quirk, not a real mismatch (fit and predict use the same
+    # positional float32 array throughout, matching `feats` by index).
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="X does not have valid feature names")
+        return entry["model"].predict_proba(Xt)[:, 1]
 
 
 def evaluate_all(models: dict, Xte, yte) -> pd.DataFrame:
