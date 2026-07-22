@@ -80,8 +80,10 @@ One further branch was merged after that:
   [PR #2](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/pull/2)
 
 Remote: `https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform.git`.
-As of 2026-07-22, local `main` has post-submission work (§3.1) not yet pushed — see that
-section for exactly what's outstanding.
+The Bonus B restoration (§3.1) was committed on branch `bonus-fastapi-graphql`, pushed,
+and merged into `main` via
+[PR #4](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/pull/4)
+on 2026-07-22. Local `main` is up to date with `origin/main` as of the last pull.
 
 ### 3.1 Post-submission: Bonus B restored (2026-07-22)
 
@@ -103,9 +105,11 @@ At the user's explicit request, the Model Deployment + GraphQL bonus removed in
 - Verified: `pytest tests/` → 72/72 passing; a real `uvicorn api.main:app` process was
   started and `/health`, `/docs`, `/graphql` all responded correctly before being killed.
 
-**Not yet done:** commit + push this work (currently sitting as local changes only);
-update `PLAN.md`/`reports/report.md`/`docs/build_log.md` bonus-scope sections that were
-edited during the original removal (they still describe the dashboard as the only bonus).
+**Done since:** committed, pushed (branch `bonus-fastapi-graphql`), and merged into `main`
+via PR #4; `PLAN.md`, `reports/report.md`, and `docs/build_log.md` were all updated in the
+same pass to describe both bonuses (no longer just the dashboard). The confidential brief
+PDF and the internal `docs/PROJECT_AUDIT_REPORT.md` were removed from the working tree and
+added to `.gitignore` so they can't be re-added by accident.
 
 ## 4. Architecture (condensed — full detail in `README.md`)
 
