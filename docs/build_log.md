@@ -230,3 +230,47 @@ a materially bigger change to code shared with actual model training, not folded
 into this pass.
 
 Result: `pytest tests/` -> 55/55 passing (up from 49).
+
+---
+
+## 12. Bonus B restored: FastAPI deployment + real GraphQL (2026-07-22)
+
+Post-submission, at the user's explicit request, the Model Deployment + GraphQL bonus
+scope removed in `trim-bonus-scope` (§9 above did the removal narrative implicitly via
+`PROJECT_STATUS.md`; the actual removal commit was `9f2051e`) was rebuilt.
+
+**FastAPI (`api/main.py`):** restored close to its original form from the deleted
+`ac88cfe` commit. Checked first whether anything underneath it had changed enough to
+break it: `features.build_maintenance_features(rotating_only=, need_target=)` and every
+`graph.py` query function used by the API kept their exact signatures across the
+removal (confirmed via `git show 9f2051e -- src/nectar/features.py` -- only a docstring
+changed), so the restored endpoint code needed no logic changes, only re-adding the file.
+
+**GraphQL (`api/schema.py`) -- new, and deliberately different from the original
+submission's approach:** the original submission's "GraphQL bonus" claim (removed in
+`9f2051e`) was really just re-framing the existing `graph.py` query functions as
+satisfying a GraphQL bonus -- they're plain Python functions, not a GraphQL schema. This
+time an actual GraphQL layer was built: `strawberry-graphql`, mounted at `/graphql` via
+`strawberry.fastapi.GraphQLRouter` in the same FastAPI app (one process, not a second
+server). The schema implements the brief's example queries verbatim --
+`connectedAssets`, `downstreamImpact`, `assetsBySite`, `isolatedAssets` -- plus
+`upstreamDependencies` and `failureImpact` for completeness, all as thin resolvers over
+the unchanged `graph.py` functions (no graph logic duplicated).
+
+**Verification, not just "should work":**
+- `pytest tests/test_api.py tests/test_graphql.py` -> 16/16 passing (10 REST + 6
+  GraphQL), run against the live app via `TestClient`, same code path a real HTTP
+  client hits.
+- A real `uvicorn api.main:app` process was started on a throwaway port; `/health`,
+  `/docs` (Swagger UI), and `/graphql` (GraphiQL) were each confirmed responding
+  `200` via `curl` before the process was killed -- not just the in-process
+  `TestClient`, an actual server socket.
+- Full suite: `pytest tests/` -> 72/72 passing (up from 55).
+
+**Dependency additions:** `fastapi`, `pydantic`, `strawberry-graphql[fastapi]` (pulls in
+`graphql-core`); `uvicorn` and `httpx` were already present as transitive deps of
+Streamlit/testing tooling.
+
+`README.md`, `PROJECT_STATUS.md`, `reports/report.md`, and `PLAN.md` were all updated in
+this same pass to describe both bonuses. **Left for a follow-up:** this work is not yet
+committed/pushed.

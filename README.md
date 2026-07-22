@@ -16,7 +16,8 @@ interactive dashboard with live prediction scoring.
 | 3. Energy Forecasting | XGBoost (primary) vs. Holt-Winters (baseline), day-ahead, weather-exogenous | **MAPE 9.27%** (XGBoost) vs 161% (baseline) |
 | 4. Anomaly Detection | Statistical (seasonal MAD-z) + Isolation Forest + CUSUM + change-point | IsoForest anomalies **2.5×** more frequent within 24h of a fault |
 | 5. Connectivity | NetworkX directed graph | Hierarchy, failure propagation, full DQ audit — all 4 planted issues found |
-| Bonus | Streamlit dashboard | 6-section ops dashboard incl. **live** failure scoring |
+| Bonus A | Streamlit dashboard | 6-section ops dashboard incl. **live** failure scoring |
+| Bonus B | FastAPI `/predict_failure` + GraphQL | Real HTTP model deployment, and a Strawberry GraphQL schema over the Task 5 graph implementing the brief's own example queries |
 
 All numbers above are reproduced by `python scripts/run_pipeline.py` — a genuine
 headless, one-command run, not just notebook output (verified: pipeline metrics match
@@ -52,8 +53,12 @@ python scripts/run_pipeline.py
 # 4. OR run the narrated notebooks in order (same underlying src/nectar/ logic)
 jupyter lab notebooks/     # 01 -> 06
 
-# 5. (Bonus) Launch the dashboard
+# 5. (Bonus A) Launch the dashboard
 streamlit run dashboard/app.py            # http://localhost:8501
+
+# 6. (Bonus B) Launch the FastAPI + GraphQL service
+uvicorn api.main:app --reload             # http://localhost:8000/docs
+                                            # http://localhost:8000/graphql (GraphiQL)
 ```
 
 Verified on **Python 3.13.14** (`.python-version`). All dependencies including SHAP,
@@ -86,10 +91,14 @@ D:\Nectar\
 ├── notebooks/                     narrated analysis, 01 (data gen) -> 06 (connectivity)
 ├── scripts/
 │   └── run_pipeline.py             one-command headless reproduction
-├── tests/                          55 tests: data generation, feature leakage, graph queries,
-│                                    forecasting, anomaly detection, maintenance model
+├── tests/                          72 tests: data generation, feature leakage, graph queries,
+│                                    forecasting, anomaly detection, maintenance model,
+│                                    FastAPI + GraphQL end-to-end
 ├── models/                         predictive_maintenance.pkl, asset_graph.pkl
-├── dashboard/app.py                Streamlit -- Bonus
+├── dashboard/app.py                Streamlit -- Bonus A
+├── api/
+│   ├── main.py                     FastAPI -- Bonus B: POST /predict_failure + graph endpoints
+│   └── schema.py                   Strawberry GraphQL schema over graph.py -- Bonus B
 ├── docs/
 │   ├── data_dictionary.md          per-asset-type unit/range/standard reference
 │   ├── build_log.md                chronological build log: bugs found, fixes, decisions
@@ -174,17 +183,33 @@ no copy-pasted preprocessing anywhere in the repo.
   kill. A stratified 300k-row subsample (positive rate preserved) is an explicit,
   documented trade-off, not a silent shortcut.
 - **`src/nectar/` as the single source of truth** — see Architecture above.
+- **FastAPI `/predict_failure` runs feature engineering inside the request**, calling the
+  same `features.build_maintenance_features()` used in training (train/serve parity),
+  rather than accepting a pre-engineered 82-feature vector. `pd.get_dummies()` only
+  creates one-hot columns for categories present in whatever window it's given, so a
+  single-asset request never produces the full training column set on its own — the
+  endpoint reindexes to the trained feature list (`bundle["features"]`) before scoring,
+  which correctly zero-fills any category that doesn't apply to that request.
+- **Strawberry over Graphene/Ariadne for the GraphQL bonus** — code-first, type-hint-driven
+  schema definition (`@strawberry.type` / `@strawberry.field`) that mirrors the rest of the
+  codebase's typed style, plus a first-party `strawberry.fastapi.GraphQLRouter` so it
+  mounts into the same app as the REST API rather than running a second server. The schema
+  is a thin query layer over `graph.py` — no graph logic is duplicated, it's the identical
+  `get_connected_assets` / `get_downstream_impact` / `get_assets_by_site` /
+  `get_isolated_assets` / `failure_impact` functions Task 5's notebook uses.
 
 ---
 
 ## Verification
 
 ```bash
-pytest tests/ -v              # 55 tests: generator output ranges/counts, feature
+pytest tests/ -v              # 72 tests: generator output ranges/counts, feature
                                # leakage guards, graph query correctness on a fixture,
-                               # forecasting/anomaly/maintenance-model coverage
+                               # forecasting/anomaly/maintenance-model coverage, plus
+                               # FastAPI + GraphQL end-to-end (test_api.py/test_graphql.py
+                               # skip automatically if the pipeline hasn't been run yet)
 python scripts/run_pipeline.py  # full headless run; confirms every artifact the
-                                 # dashboard needs gets produced without Jupyter
+                                 # dashboard/API need gets produced without Jupyter
 ```
 
 Every notebook (01–06) was executed in place (`jupyter nbconvert --execute`) — outputs

@@ -18,3 +18,9 @@ data/raw/sensor_telemetry.parquet
 data/processed/
 dashboard/anomalies.csv
 dashboard/anomalies.parquet
+
+# Confidential brief / internal review material -- not for the public repo.
+# The brief PDF was added once before (`cfcf035`) and deliberately removed
+# again (`47f0adf`); ignoring it outright now prevents that repeat.
+Nectar Data Scientist Challenge.pdf
+docs/PROJECT_AUDIT_REPORT.md

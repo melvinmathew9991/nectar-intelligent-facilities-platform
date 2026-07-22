@@ -5,7 +5,8 @@ is, how it's built, what's done, and what's left — without re-reading the whol
 re-deriving decisions already made. If picking this project back up in a new session,
 read this file first.
 
-**Last updated:** 2026-07-16. **Status: build complete, tested, verified, cleaned, pushed.**
+**Last updated:** 2026-07-22. **Status: build complete, tested, verified, cleaned, pushed;
+post-submission bonus work in progress (see §3.1).**
 **Deadline:** 2026-07-14 (5 calendar days from receipt on 2026-07-09) — submitted.
 
 ---
@@ -36,14 +37,20 @@ Everything is built, executed for real (not hand-written), and independently ver
 - [x] Task 4 Anomaly Detection — 4 methods, 2.5× validated anomaly lift near known faults
 - [x] Task 5 Connectivity Analysis — full graph, brief's example queries, all 4 planted
       DQ issues found
-- [x] Bonus: Streamlit dashboard — live model scoring, verified running headless,
+- [x] Bonus A: Streamlit dashboard — live model scoring, verified running headless,
       performance-optimized (~2.2x faster first load: ~30s -> ~13.6s, see
       `docs/build_log.md` §11)
-- [x] 55/55 automated tests passing (`pytest tests/`) — extended post-submission with
+- [x] Bonus B: FastAPI `/predict_failure` + graph endpoints, plus a real Strawberry
+      GraphQL schema (`/graphql`) over Task 5's graph — restored 2026-07-22 (see §3.1;
+      originally built in session 5, removed in `trim-bonus-scope`, now re-added at the
+      user's request with an actual GraphQL implementation this time, not just a claim
+      that the existing query functions satisfied it)
+- [x] 72/72 automated tests passing (`pytest tests/`) — extended post-submission with
       `test_anomaly.py`, `test_forecasting.py`, `test_maintenance_model.py` (22 tests)
       to close a coverage gap: those three modules had shipped in the pipeline with
       zero tests; `test_preprocessing.py` (4 tests) and 2 more in `test_features.py`
-      added alongside the dashboard performance work (see `docs/build_log.md` §11)
+      added alongside the dashboard performance work (see `docs/build_log.md` §11);
+      `test_api.py` (10) + `test_graphql.py` (6) added with the Bonus B restoration
 - [x] All 6 notebooks confirmed executed (checked programmatically: `execution_count`
       populated, zero error outputs — not eyeballed)
 - [x] `scripts/run_pipeline.py` — one-command headless reproduction, verified to produce
@@ -73,9 +80,32 @@ One further branch was merged after that:
   [PR #2](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/pull/2)
 
 Remote: `https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform.git`.
-Local `main` is up to date with `origin/main` as of the last push. `pytest tests/` →
-55/55 passing (last verified 2026-07-16) -- the dashboard performance work
-(`docs/build_log.md` §11) is complete locally but not yet committed/pushed.
+As of 2026-07-22, local `main` has post-submission work (§3.1) not yet pushed — see that
+section for exactly what's outstanding.
+
+### 3.1 Post-submission: Bonus B restored (2026-07-22)
+
+At the user's explicit request, the Model Deployment + GraphQL bonus removed in
+`trim-bonus-scope` (§3, PR #2) was rebuilt:
+- `api/main.py` — FastAPI service, restored close to its original `ac88cfe` form
+  (verified still compatible with the current `features.py`/`graph.py` signatures —
+  nothing else changed underneath it since removal).
+- `api/schema.py` — **new**, a real GraphQL schema (Strawberry, mounted at `/graphql` via
+  `strawberry.fastapi.GraphQLRouter`) implementing the brief's own example queries
+  (`connectedAssets`, `downstreamImpact`, `assetsBySite`, `isolatedAssets`, plus
+  `failureImpact` and `upstreamDependencies`). Unlike the original submission, this is an
+  actual GraphQL implementation, not a re-framing of the existing `graph.py` functions as
+  satisfying a GraphQL bonus.
+- `tests/test_api.py` (10 tests, restored) + `tests/test_graphql.py` (6 tests, new) — both
+  hit the live app via `TestClient`, skip automatically if the pipeline hasn't been run.
+- `requirements.txt`: `fastapi`, `uvicorn`, `pydantic`, `strawberry-graphql[fastapi]`
+  added back.
+- Verified: `pytest tests/` → 72/72 passing; a real `uvicorn api.main:app` process was
+  started and `/health`, `/docs`, `/graphql` all responded correctly before being killed.
+
+**Not yet done:** commit + push this work (currently sitting as local changes only);
+update `PLAN.md`/`reports/report.md`/`docs/build_log.md` bonus-scope sections that were
+edited during the original removal (they still describe the dashboard as the only bonus).
 
 ## 4. Architecture (condensed — full detail in `README.md`)
 
@@ -87,6 +117,7 @@ data_generation.py (seeded) -> 4 CSVs in data/raw/
     -> Task 4 (anomaly.py) / Task 5 (graph.py)
     -> models/*.pkl + dashboard/anomalies.csv
     -> dashboard/app.py (consumes those artifacts)
+    -> api/main.py + api/schema.py (FastAPI + GraphQL, same artifacts/modules)
 ```
 
 `src/nectar/` is the single source of truth — every notebook, `scripts/run_pipeline.py`,
@@ -114,7 +145,7 @@ package (`pip install -e .`) via `pyproject.toml`.
 ## 6. Quick verification (run these to confirm nothing has drifted)
 
 ```bash
-pytest tests/ -v                     # expect 55 passed
+pytest tests/ -v                     # expect 72 passed
 python scripts/run_pipeline.py       # expect ~5 min, metrics matching README's TL;DR table
 ```
 
