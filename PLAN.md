@@ -154,10 +154,20 @@ Query functions matching the brief's own examples: `get_connected_assets(asset_i
 **Failure impact analysis**: simulate Chiller/Pump node removal, compute disconnected downstream subgraph — now backed by real correlated telemetry evidence from §1.6, not just topology — quantify affected assets/occupants, give mitigation recommendations.
 **Data quality checks**: duplicate edges, orphan assets, invalid parent-child mappings, self-loops, validated against the deliberately-injected issues from §1.8. Second-deepest task per rubric weight (15%).
 
-## 7. Bonus — Streamlit Dashboard (`dashboard/app.py`)
+## 7. Bonus A — Streamlit Dashboard (`dashboard/app.py`)
 Reads precomputed artifacts. Tabs: Site Overview, Asset Health (Task 2 probabilities), Energy
 Trends (Task 3 forecasts incl. weather overlay), Anomaly Alerts (Task 4), Asset Connectivity
 (interactive graph + Task 5 query functions as a simple UI).
+
+## 7b. Bonus B — Model Deployment + GraphQL (`api/main.py`, `api/schema.py`)
+FastAPI service: `POST /predict_failure` (raw telemetry in, feature engineering run
+inside the endpoint via the shared `features.py`, failure probability out), plus
+`/assets/{id}/downstream_impact` and `/upstream_dependencies`. A Strawberry GraphQL
+schema mounted at `/graphql` in the same app implements the brief's example queries
+(`connectedAssets`, `downstreamImpact`, `assetsBySite`, `isolatedAssets`) as thin
+resolvers over the Task 5 query functions in §6 — no graph logic duplicated. Added
+post-submission (2026-07-22) after initially being built, then trimmed from bonus scope,
+then restored at the user's request with a real GraphQL implementation this time.
 
 ## 8. Reproducibility, Testing, Docs
 - `scripts/run_pipeline.py`: one command, full pipeline, writes all artifacts.
@@ -169,7 +179,7 @@ disclosure, weather.csv as added scope, South-Indian-climate mode assumption, st
 - `reports/Nectar_DS_Challenge_Report.md`: ~5-page equivalent, per-task results + business impact + connectivity findings + assumptions appendix.
 
 ## Tech Stack (`requirements.txt`)
-pandas, numpy, scikit-learn, lightgbm, xgboost, shap, statsmodels, ruptures, matplotlib, seaborn, plotly, networkx, pyvis, streamlit, pyarrow, jupyter, pytest.
+pandas, numpy, scikit-learn, lightgbm, xgboost, shap, statsmodels, ruptures, matplotlib, seaborn, networkx, pyvis, streamlit, fastapi, uvicorn, pydantic, strawberry-graphql, pyarrow, jupyter, pytest. (`plotly` was an initially-planned dependency, added to `requirements.txt`, then removed as unused once the dashboard settled on native Streamlit charts — see `docs/build_log.md`.)
 
 ## Build Sequence
 1. Scaffold folders + `requirements.txt` + `config.py`.

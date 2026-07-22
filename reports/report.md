@@ -165,12 +165,20 @@ root cause first, not secondary symptoms.
 
 ---
 
-## 7. Bonus Deliverable
+## 7. Bonus Deliverables
 
-**Streamlit dashboard** (`dashboard/app.py`): 6 sections including **live** failure
+**A. Streamlit dashboard** (`dashboard/app.py`): 6 sections including **live** failure
 scoring (the saved model is actually invoked against each asset's current feature
 vector, not just confirmed present) and an interactive connectivity/failure-impact
 explorer. Verified running headlessly with no server-side exceptions.
+
+**B. Model Deployment + GraphQL** (`api/main.py`, `api/schema.py`): a FastAPI service
+exposing `POST /predict_failure` (raw telemetry in, failure probability out, feature
+engineering run inside the endpoint via the same `features.py` used in training) plus
+graph endpoints, and a Strawberry GraphQL schema at `/graphql` implementing the brief's
+own example queries (assets connected to a chiller, downstream impact of an AHU failure,
+assets by site, isolated assets, full failure-propagation analysis) over Task 5's graph.
+Verified against a live `uvicorn` process and 16 automated end-to-end tests.
 
 ---
 
@@ -186,6 +194,7 @@ models concurrently.
 
 `python scripts/run_pipeline.py` reproduces every number in this report headlessly in
 under 5 minutes — verified to match the individually-executed notebooks' metrics
-exactly on a full from-scratch data regeneration (`SEED=42`). 55 automated tests
+exactly on a full from-scratch data regeneration (`SEED=42`). 72 automated tests
 (`pytest tests/`) assert generator output ranges, feature-leakage guards, graph
-query correctness, and forecasting/anomaly-detection/maintenance-model behavior.
+query correctness, forecasting/anomaly-detection/maintenance-model behavior, and
+FastAPI + GraphQL end-to-end request/response behavior.
