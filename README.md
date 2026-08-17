@@ -106,10 +106,12 @@ slice and the 992k-row full history. Live model inference genuinely runs on the 
 app; the trained `models/predictive_maintenance.pkl` is committed (6.4MB).
 
 To deploy: point Streamlit Community Cloud at this repo with `dashboard/app.py` as the
-entrypoint. Note that Cloud installs from the **root** `requirements.txt` — it resolves
-dependency files at the repo root, not next to the entrypoint, so
-`dashboard/requirements.txt` is not used by the hosted build (it remains a convenience
-for running just the dashboard locally: `pip install -r dashboard/requirements.txt`).
+entrypoint. Cloud resolves the dependency file **next to the entrypoint first**, so it
+installs `dashboard/requirements.txt` (8 packages, ~49 with transitives) rather than the
+root `requirements.txt` (22, ~159 with transitives) — a much smaller hosted build. Both
+files are pinned, so the deployed app runs the same versions the results were produced
+with. Set the entrypoint carefully: pointing it at a module with no Streamlit calls
+deploys successfully and renders a blank page.
 
 ---
 
@@ -142,7 +144,7 @@ nectar-intelligent-facilities-platform/
 ├── scripts/
 │   ├── run_pipeline.py             one-command headless reproduction
 │   └── build_demo_slice.py         writes data/demo/ from a completed full run
-├── tests/                          74 tests: data generation, feature leakage, graph queries,
+├── tests/                          76 tests: data generation, feature leakage, graph queries,
 │                                    forecasting, anomaly detection, maintenance model,
 │                                    demo-slice fallback, FastAPI + GraphQL end-to-end
 ├── models/                         predictive_maintenance.pkl, asset_graph.pkl
@@ -257,7 +259,7 @@ no copy-pasted preprocessing anywhere in the repo.
 ## Verification
 
 ```bash
-pytest tests/ -v              # 74 tests: generator output ranges/counts, feature
+pytest tests/ -v              # 76 tests: generator output ranges/counts, feature
                                # leakage guards, graph query correctness on a fixture,
                                # forecasting/anomaly/maintenance-model coverage, plus
                                # FastAPI + GraphQL end-to-end (test_api.py/test_graphql.py

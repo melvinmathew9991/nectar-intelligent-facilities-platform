@@ -1,18 +1,21 @@
-# Dashboard-only dependencies for hosted deployment (Streamlit Community Cloud).
-# The root requirements.txt is the full development set -- SHAP, LightGBM,
-# XGBoost, ruptures, statsmodels, FastAPI, Jupyter -- none of which the
-# dashboard imports. Installing only what dashboard/app.py and its transitive
-# nectar imports (preprocessing, features, graph) actually need keeps the
-# hosted build small and fast.
+# Dependencies for the hosted dashboard (Streamlit Community Cloud).
 #
-# scikit-learn is pinned exactly: models/predictive_maintenance.pkl is a joblib
-# pickle of a RandomForest trained on this version, and unpickling across a
-# different sklearn version is not guaranteed to work.
-streamlit>=1.59
-pandas>=3.0
-numpy>=2.4
+# Cloud resolves the dependency file next to the entrypoint first, so THIS file --
+# not the root requirements.txt -- is what the deployed app installs. It covers only
+# what dashboard/app.py and its transitive nectar imports (preprocessing, features,
+# graph) actually need: none of SHAP, LightGBM, XGBoost, ruptures, statsmodels,
+# FastAPI, or Jupyter. 8 direct packages (~49 with transitives) instead of 22 (~159).
+#
+# Pinned, like the root lock file: the first deploy ran on floating ranges and pulled
+# streamlit 1.61.1 / pandas 3.0.5 / numpy 2.5.2 -- newer than anything the committed
+# results were produced or tested against. models/predictive_maintenance.pkl is a
+# joblib pickle of a scikit-learn RandomForest, and unpickling across versions is not
+# guaranteed, so the hosted app should not silently drift.
+streamlit==1.59.2
+pandas==3.0.3
+numpy==2.4.6
 scikit-learn==1.9.0
-networkx>=3.6
-matplotlib>=3.11
-joblib>=1.5
-pyarrow>=24.0
+networkx==3.6.1
+matplotlib==3.11.1
+joblib==1.5.3
+pyarrow==24.0.0

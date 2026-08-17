@@ -194,7 +194,7 @@ models concurrently.
 
 `python scripts/run_pipeline.py` reproduces every number in this report headlessly in
 in under 9 minutes — verified to match the individually-executed notebooks' metrics
-exactly on a full from-scratch data regeneration (`SEED=42`). 74 automated tests
+exactly on a full from-scratch data regeneration (`SEED=42`). 76 automated tests
 (`pytest tests/`) assert generator output ranges, feature-leakage guards, graph
 query correctness, forecasting/anomaly-detection/maintenance-model behavior, and
 FastAPI + GraphQL end-to-end request/response behavior.

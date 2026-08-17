@@ -6,9 +6,9 @@
 #
 # To depend on `nectar` as a package instead, use pyproject.toml's dependency
 # ranges: `pip install -e .` (plus extras: [dashboard], [api], [notebooks], [dev]).
-# Streamlit Community Cloud installs from THIS file (it resolves dependency files
-# at the repo root, not next to the entrypoint). dashboard/requirements.txt is a
-# smaller subset for running only the dashboard locally.
+# Streamlit Community Cloud does NOT use this file: it resolves the dependency file
+# next to the entrypoint first, so the hosted dashboard installs from
+# dashboard/requirements.txt (a pinned subset). This file is the full dev environment.
 
 # --- core pipeline ---
 pandas==3.0.3

@@ -45,7 +45,7 @@ Everything is built, executed for real (not hand-written), and independently ver
       originally built in session 5, removed in `trim-bonus-scope`, now re-added at the
       user's request with an actual GraphQL implementation this time, not just a claim
       that the existing query functions satisfied it)
-- [x] 74/74 automated tests passing (`pytest tests/`) — extended post-submission with
+- [x] 76/76 automated tests passing (`pytest tests/`) — extended post-submission with
       `test_anomaly.py`, `test_forecasting.py`, `test_maintenance_model.py` (22 tests)
       to close a coverage gap: those three modules had shipped in the pipeline with
       zero tests; `test_preprocessing.py` (4 tests) and 2 more in `test_features.py`
@@ -130,10 +130,10 @@ gitignored, and where a ~1GB container couldn't feature-engineer 1.96M rows anyw
   `python scripts/build_demo_slice.py --pick-window`.
 - Verified the slice is a window, not a distortion: features and predicted probabilities
   match a full-history run evaluated at the same moment to within 1e-9.
-- `dashboard/requirements.txt` — 8 packages instead of the root file's 22. Written
-  expecting Cloud to prefer a dependency file next to the entrypoint; the first real
-  deploy proved it does not (it resolves at the repo root and installed all 159 packages
-  from `requirements.txt`). Kept as a convenience for a minimal local dashboard env.
+- `dashboard/requirements.txt` — 8 packages (~49 with transitives) instead of the root
+  file's 22 (~159). Cloud resolves the dependency file next to the entrypoint first, so
+  this is what the hosted app installs. Pinned, after the first working deploy pulled
+  streamlit 1.61.1 / pandas 3.0.5 / numpy 2.5.2 off floating ranges.
 - `LICENSE` (MIT) added; GitHub repo description + 17 topics set; issues #5–#7 filed for
   the documented open limitations.
 
@@ -178,7 +178,7 @@ package (`pip install -e .`) via `pyproject.toml`.
 ## 6. Quick verification (run these to confirm nothing has drifted)
 
 ```bash
-pytest tests/ -v                     # expect 74 passed
+pytest tests/ -v                     # expect 76 passed
 python scripts/run_pipeline.py       # expect ~8-9 min, metrics matching README's TL;DR table
 ```
 

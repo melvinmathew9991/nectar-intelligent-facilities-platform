@@ -313,23 +313,70 @@ test_trailing_window_matches_full_history` already asserts for the dashboard's 3
 **Also:** the app was smoke-tested headless with the full-size files hidden, serving with
 zero exceptions; `LICENSE` (MIT) added.
 
-**What the first real deploy corrected (2026-08-17):** two assumptions made here were
-wrong, and only deploying surfaced them.
+### 13.1 What the first real deploy actually taught (2026-08-17)
 
-1. `dashboard/requirements.txt` was written on the assumption that Streamlit Cloud
-   prefers a dependency file next to the entrypoint. It does not — it resolves at the
-   repo root, and the build log shows it installing all 159 packages from
-   `requirements.txt` (`WARN: More than one requirements file detected ... Used: uv with
-   requirements.txt`). The file is kept for minimal local dashboard installs, and the
-   README claim was corrected.
-2. The Python version was expected to matter (the pins target 3.13). Cloud used **3.14.7**
-   and every pin resolved cleanly, so it didn't.
+The deploy went blank-page three times, and the debugging was worse than the bugs.
 
-**And one real failure:** the 14-day slice booted the server but rendered a blank page --
-`load_all()` runs at module import, so anything that dies there yields no page at all,
-and 304k telemetry rows plus 159k anomaly rows exceeded what the container would carry.
-Cut to **4 days** (86,976 telemetry rows, 45,504 anomaly rows, 1.9MB total), which is
-still strictly more than anything the dashboard computes: live scoring reads a trailing
-36h and the widest rolling feature is 24h. Re-verified after the cut -- the scored
-features and probabilities still match a full-history run at the same moment to 1e-9,
-same 4 assets flagged, same 0.999 top probability.
+**The actual cause: the wrong entrypoint.** The app had been created with a main file
+path of `api/schema.py` -- the Strawberry GraphQL schema, which contains no Streamlit
+calls at all. Streamlit ran it happily, rendered nothing, and reported no error. A blank
+page with a clean server start is exactly what that looks like.
+
+Before finding it, three fixes were pushed against hypotheses rather than evidence: a
+memory cut, an icon removal, and error surfacing. **All three were guesses made while
+the deploy log sat unread.** The log's footer names the entrypoint on every run and
+would have ended it immediately. The lesson isn't about Streamlit -- it's that a
+reproducible log beats three plausible theories, and "fix and redeploy" is not a
+diagnostic method.
+
+Two of those changes were still worth keeping:
+
+- **Error surfacing** (`dashboard/app.py`): `load_all()` and the graph build run at
+  module import, before anything is drawn, so any exception there yields a blank page
+  with no visible cause. They're now wrapped, and a failure renders the traceback plus
+  a diagnostic line (demo mode, which data directories exist, what's in `data/demo/`).
+- **The 4-day slice**: cut from 14 days for a memory problem that was never
+  demonstrated. Kept anyway -- it's lighter, and still strictly more history than the
+  dashboard uses (live scoring reads a trailing 36h; the widest rolling feature is 24h).
+  Re-verified after the cut: features and probabilities still match a full-history run
+  at the same moment to 1e-9, same 4 assets flagged, same 0.999 top probability.
+
+**A wrong correction, corrected.** The first (misconfigured) deploy installed from the
+root `requirements.txt`, which looked like proof that Cloud ignores a dependency file
+next to the entrypoint -- and the README was "fixed" accordingly. It was the opposite:
+Cloud *does* prefer the entrypoint-adjacent file, and had only fallen back to root
+because `api/` has no requirements file. Once the entrypoint was corrected, the log
+showed `dashboard/requirements.txt` being used. Evidence gathered from a broken
+configuration is not evidence about the working one.
+
+**Then a real bug, exposed by the smaller slice.** With `dashboard/app.py` finally
+running, the page died at:
+
+```python
+dow = b.groupby(b.timestamp.dt.dayofweek)["power_consumption"].mean()
+ax.bar(["M", "T", "W", "T", "F", "S", "S"], dow.values, ...)
+```
+
+Seven hardcoded labels against a groupby whose length is however many distinct weekdays
+the window covers. The 4-day slice spans five, so matplotlib raised
+`shape mismatch: 'x' with shape (7,) and 'height' with shape (5,)`.
+
+**The worse half was silent.** `bar()` treats string x-values as categories, and that
+list has duplicates -- `"T"` for Tuesday and Thursday, `"S"` for Saturday and Sunday.
+Verified directly: with a full week of data it draws 7 bars but produces only 5 tick
+labels, with Thursday landing on Tuesday's x-position and Sunday on Saturday's. So the
+day-of-week chart had been rendering two days on top of two others *the whole time*,
+including locally. The crash was the good outcome -- it made a silent corruption loud.
+Fixed by labelling from the actual index (`[DOW_LABELS[i] for i in dow.index]`), which
+handles partial windows and removes the collision.
+
+**Why no test caught it.** The dashboard's "headless verification" started Streamlit and
+fetched the HTTP root. That returns Streamlit's static shell -- the script doesn't
+execute until a browser session connects over the websocket -- so the check confirmed a
+server was listening and nothing more. It passed on every broken build.
+
+Replaced with `tests/test_dashboard.py`, which uses `streamlit.testing.v1.AppTest` to
+actually execute the script against the committed demo slice and assert no exception,
+plus that the core sections and live-scoring table render. Confirmed it fails on the
+original code with the exact production error before being kept -- a regression test
+that doesn't fail on the bug it was written for is decoration. Suite: 74 -> 76.

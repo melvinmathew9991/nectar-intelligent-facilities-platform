@@ -23,6 +23,7 @@ from nectar import graph as gmod
 
 st.set_page_config(page_title="Nectar Facilities Platform", layout="wide")
 BASE = os.path.dirname(__file__)
+DOW_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
 @st.cache_data
@@ -186,9 +187,13 @@ with col1:
     ax.set(title="Avg by hour of day", xlabel="hour", ylabel="kWh")
     st.pyplot(fig)
 with col2:
-    dow = b.groupby(b.timestamp.dt.dayofweek)["power_consumption"].mean()
+    # Label from the actual index, not a fixed 7-element list: the window may not
+    # span a full week (the hosted demo slice covers 4 days), and single-letter
+    # labels collide -- matplotlib treats bar() x-values as categories, so a
+    # duplicated "T"/"S" silently draws Thu on top of Tue and Sun on top of Sat.
+    dow = b.groupby(b.timestamp.dt.dayofweek)["power_consumption"].mean().sort_index()
     fig, ax = plt.subplots(figsize=(5.5, 3))
-    ax.bar(["M", "T", "W", "T", "F", "S", "S"], dow.values, color="#31a354")
+    ax.bar([DOW_LABELS[i] for i in dow.index], dow.values, color="#31a354")
     ax.set(title="Avg by day of week", ylabel="kWh")
     st.pyplot(fig)
 st.divider()
