@@ -165,14 +165,18 @@ root cause first, not secondary symptoms.
 
 ---
 
-## 7. Bonus Deliverables
+## 7. Operations Dashboard & Model Deployment
 
-**A. Streamlit dashboard** (`dashboard/app.py`): 6 sections including **live** failure
+**Operations dashboard** (`dashboard/app.py`): 6 sections including **live** failure
 scoring (the saved model is actually invoked against each asset's current feature
 vector, not just confirmed present) and an interactive connectivity/failure-impact
-explorer. Verified running headlessly with no server-side exceptions.
+explorer. Deployed on Streamlit Community Cloud against a committed 4-day data slice,
+and verified by `tests/test_dashboard.py`, which executes the app through Streamlit's
+`AppTest` and asserts it renders without raising — a deliberate replacement for an
+earlier check that merely fetched the HTTP root, which returns the static shell without
+ever running the script (and so passed while the app was broken).
 
-**B. Model Deployment + GraphQL** (`api/main.py`, `api/schema.py`): a FastAPI service
+**Model deployment + GraphQL** (`api/main.py`, `api/schema.py`): a FastAPI service
 exposing `POST /predict_failure` (raw telemetry in, failure probability out, feature
 engineering run inside the endpoint via the same `features.py` used in training) plus
 graph endpoints, and a Strawberry GraphQL schema at `/graphql` implementing the brief's
