@@ -25,6 +25,15 @@ DATA_PROCESSED_DIR = os.path.join(ROOT_DIR, "data", "processed")
 # the gitignored full-size telemetry CSV isn't present.
 DATA_DEMO_DIR = os.path.join(ROOT_DIR, "data", "demo")
 DEMO_DAYS = 14
+# The slice ends here rather than at the dataset's tail. The dashboard's live
+# scoring reads each asset's most recent 36h, and the final 36h of the full
+# dataset happens to contain no imminent faults -- every asset scores 0.10-0.27
+# against a 0.569 threshold, so the failure-prediction panel renders empty.
+# This timestamp was selected as the hour with the highest count of rotating-asset
+# fault onsets in the following 24h (see scripts/build_demo_slice.py), giving a
+# hosted demo that shows the model actually firing. It is a different *moment*,
+# not different data or a different model.
+DEMO_END = "2025-02-15 15:00:00"
 MODELS_DIR = os.path.join(ROOT_DIR, "models")
 FIGURES_DIR = os.path.join(ROOT_DIR, "reports", "figures")
 DOCS_DIR = os.path.join(ROOT_DIR, "docs")

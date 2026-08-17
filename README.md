@@ -86,10 +86,20 @@ slice only when it isn't (`preprocessing.demo_mode()`), so a local checkout that
 the pipeline is never silently downgraded — asserted in
 `tests/test_preprocessing.py::test_demo_mode_only_when_full_csv_absent_and_slice_present`.
 
-The slice is **trailing**, not leading: the dashboard's live failure scoring uses each
-asset's most recent 36h, so a slice ending where the full dataset ends produces the same
-scores a local full run does. Live model inference is genuinely running on the hosted
-app — the trained `models/predictive_maintenance.pkl` is committed (6.4MB).
+The window ends at `config.DEMO_END` (`2025-02-15 15:00`) rather than at the dataset's
+tail. The dashboard's live scoring reads each asset's most recent 36h, and the final 36h
+of the full dataset contains no imminent faults — every asset scores 0.10–0.27 against a
+0.569 threshold, so the failure-prediction panel renders empty. `DEMO_END` is the hour
+with the most rotating-asset fault onsets in the following 24h (re-derive it with
+`python scripts/build_demo_slice.py --pick-window`); at that moment the model flags **4
+of 79 assets**, top probability 0.999.
+
+**This is a different moment, not different data or a different model.** Every
+rolling/lag feature looks strictly backward over ≤24h, so a 14-day window ending at T
+produces the same scored feature vector as the full 90 days evaluated at T — verified
+directly: features and predicted probabilities match to within 1e-9 between a 304k-row
+slice and the 992k-row full history. Live model inference genuinely runs on the hosted
+app; the trained `models/predictive_maintenance.pkl` is committed (6.4MB).
 
 To deploy: point Streamlit Community Cloud at this repo with
 `dashboard/app.py` as the entrypoint. `dashboard/requirements.txt` keeps the hosted
