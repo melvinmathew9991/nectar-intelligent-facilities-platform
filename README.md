@@ -1,11 +1,11 @@
 # Nectar Data Scientist Challenge — Intelligent Facilities Platform
 
-[![live demo](https://img.shields.io/badge/live%20demo-streamlit-ff4b4b.svg)](https://nectar-facilities.streamlit.app)
+[![live demo](https://img.shields.io/badge/live%20demo-streamlit-ff4b4b.svg)](https://nectar-intelligent-facilities-platform.streamlit.app)
 [![tests](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/actions/workflows/tests.yml/badge.svg)](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/actions/workflows/tests.yml)
 [![python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**▶ Live dashboard: [nectar-facilities.streamlit.app](https://nectar-facilities.streamlit.app)**
+**▶ Live dashboard: [nectar-intelligent-facilities-platform.streamlit.app](https://nectar-intelligent-facilities-platform.streamlit.app)**
 — real model inference on a committed 4-day data slice, not a screenshot. See
 [Hosted deployment](#hosted-deployment-streamlit-community-cloud) for how and why.
 
@@ -81,7 +81,7 @@ LightGBM, XGBoost, statsmodels, ruptures, pyvis install cleanly on this version.
 
 ## Hosted deployment (Streamlit Community Cloud)
 
-**Live at [nectar-facilities.streamlit.app](https://nectar-facilities.streamlit.app).**
+**Live at [nectar-intelligent-facilities-platform.streamlit.app](https://nectar-intelligent-facilities-platform.streamlit.app).**
 Cold starts take a few seconds — Community Cloud sleeps idle apps, and the first load
 builds features and scores every rotating asset before the page draws.
 
