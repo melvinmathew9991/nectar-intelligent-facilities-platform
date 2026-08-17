@@ -40,12 +40,15 @@ MAX_TRAIN_ROWS = 300_000   # memory-budget cap (this machine has ~8GB RAM total;
 
 
 def time_split(df: pd.DataFrame, feats: list[str], train_days: int = TRAIN_DAYS,
-                max_train_rows: int = MAX_TRAIN_ROWS, seed: int = config.SEED):
+                max_train_rows: int | None = MAX_TRAIN_ROWS, seed: int = config.SEED):
+    """`max_train_rows=None` disables the memory-budget subsample and trains on the
+    full training window -- the comparison issue #6 asks for. Needs materially more
+    RAM than the ~8GB this was built on; see docs/build_log.md section 4."""
     cutoff = pd.Timestamp(config.DATE_START) + pd.Timedelta(days=train_days)
     train = df[df["timestamp"] <= cutoff]
     test = df[df["timestamp"] > cutoff]
 
-    if len(train) > max_train_rows:
+    if max_train_rows is not None and len(train) > max_train_rows:
         frac = max_train_rows / len(train)
         parts = [g.sample(n=max(1, round(len(g) * frac)), random_state=seed)
                  for _, g in train.groupby("target_24h")]
@@ -62,44 +65,56 @@ def time_split(df: pd.DataFrame, feats: list[str], train_days: int = TRAIN_DAYS,
     return Xtr, ytr, Xte, yte, train, test
 
 
-def train_models(Xtr, ytr, feats: list[str]) -> dict:
+def train_models(Xtr, ytr, feats: list[str], only: str | None = None) -> dict:
+    """`only="RandomForest"` fits just that candidate. Used by
+    scripts/experiment_full_train.py to train one model at a time on the full
+    training window -- holding all four fitted models at once is the specific
+    thing that triggered the OOM kills in docs/build_log.md section 4."""
     pos_weight = (ytr == 0).sum() / max((ytr == 1).sum(), 1)
     models = {}
+
+    def _want(name: str) -> bool:
+        return only is None or only == name
 
     # Model sizes are deliberately modest (this machine has ~8GB RAM total;
     # a 300-tree depth-14 RandomForest on hundreds of thousands of rows
     # alongside 3 other models risks an OOM kill) -- a documented memory/
     # accuracy trade-off, not an oversight.
-    scaler = StandardScaler().fit(Xtr)
-    logreg = LogisticRegression(max_iter=1000, class_weight="balanced", C=0.5)
-    logreg.fit(scaler.transform(Xtr).astype(np.float32), ytr)
-    models["LogisticRegression"] = {"model": logreg, "scaler": scaler}
+    if _want("LogisticRegression"):
+        scaler = StandardScaler().fit(Xtr)
+        logreg = LogisticRegression(max_iter=1000, class_weight="balanced", C=0.5)
+        logreg.fit(scaler.transform(Xtr).astype(np.float32), ytr)
+        models["LogisticRegression"] = {"model": logreg, "scaler": scaler}
 
-    rf = RandomForestClassifier(n_estimators=150, max_depth=10, class_weight="balanced",
-                                 n_jobs=2, random_state=config.SEED)
-    rf.fit(Xtr, ytr)
-    models["RandomForest"] = {"model": rf, "scaler": None}
+    if _want("RandomForest"):
+        rf = RandomForestClassifier(n_estimators=150, max_depth=10, class_weight="balanced",
+                                     n_jobs=2, random_state=config.SEED)
+        rf.fit(Xtr, ytr)
+        models["RandomForest"] = {"model": rf, "scaler": None}
 
-    try:
-        from xgboost import XGBClassifier
-        xgb = XGBClassifier(n_estimators=300, learning_rate=0.08, max_depth=6,
-                             subsample=0.9, colsample_bytree=0.9, scale_pos_weight=pos_weight,
-                             eval_metric="aucpr", random_state=config.SEED, n_jobs=2)
-        xgb.fit(Xtr, ytr)
-        models["XGBoost"] = {"model": xgb, "scaler": None}
-    except ImportError:
-        log.warning("xgboost not available, skipping")
+    if _want("XGBoost"):
+        try:
+            from xgboost import XGBClassifier
+            xgb = XGBClassifier(n_estimators=300, learning_rate=0.08, max_depth=6,
+                                 subsample=0.9, colsample_bytree=0.9,
+                                 scale_pos_weight=pos_weight, eval_metric="aucpr",
+                                 random_state=config.SEED, n_jobs=2)
+            xgb.fit(Xtr, ytr)
+            models["XGBoost"] = {"model": xgb, "scaler": None}
+        except ImportError:
+            log.warning("xgboost not available, skipping")
 
-    try:
-        from lightgbm import LGBMClassifier
-        lgbm = LGBMClassifier(n_estimators=300, learning_rate=0.08, max_depth=8,
-                               num_leaves=63, subsample=0.9, colsample_bytree=0.9,
-                               scale_pos_weight=pos_weight, random_state=config.SEED,
-                               n_jobs=2, verbosity=-1)
-        lgbm.fit(Xtr, ytr)
-        models["LightGBM"] = {"model": lgbm, "scaler": None}
-    except ImportError:
-        log.warning("lightgbm not available, skipping")
+    if _want("LightGBM"):
+        try:
+            from lightgbm import LGBMClassifier
+            lgbm = LGBMClassifier(n_estimators=300, learning_rate=0.08, max_depth=8,
+                                   num_leaves=63, subsample=0.9, colsample_bytree=0.9,
+                                   scale_pos_weight=pos_weight, random_state=config.SEED,
+                                   n_jobs=2, verbosity=-1)
+            lgbm.fit(Xtr, ytr)
+            models["LightGBM"] = {"model": lgbm, "scaler": None}
+        except ImportError:
+            log.warning("lightgbm not available, skipping")
 
     return models
 
