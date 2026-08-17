@@ -25,8 +25,8 @@ interactive dashboard with live prediction scoring.
 | 3. Energy Forecasting | XGBoost (primary) vs. Holt-Winters (baseline), day-ahead, weather-exogenous | **MAPE 9.27%** (XGBoost) vs 161% (baseline) |
 | 4. Anomaly Detection | Statistical (seasonal MAD-z) + Isolation Forest + CUSUM + change-point | IsoForest anomalies **2.5×** more frequent within 24h of a fault |
 | 5. Connectivity | NetworkX directed graph | Hierarchy, failure propagation, full DQ audit — all 4 planted issues found |
-| Bonus A | Streamlit dashboard | 6-section ops dashboard incl. **live** failure scoring |
-| Bonus B | FastAPI `/predict_failure` + GraphQL | Real HTTP model deployment, and a Strawberry GraphQL schema over the Task 5 graph implementing the brief's own example queries |
+| 6. Operations Dashboard | Streamlit, consuming the same `src/nectar/` modules | 6-section ops dashboard incl. **live** failure scoring |
+| 7. Model Deployment | FastAPI `/predict_failure` + GraphQL | Real HTTP model deployment, and a Strawberry GraphQL schema over the Task 5 graph implementing the brief's own example queries |
 
 All numbers above are reproduced by `python scripts/run_pipeline.py` — a genuine
 headless, one-command run, not just notebook output (verified: pipeline metrics match
