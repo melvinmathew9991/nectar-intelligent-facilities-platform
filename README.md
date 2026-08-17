@@ -75,7 +75,7 @@ LightGBM, XGBoost, statsmodels, ruptures, pyvis install cleanly on this version.
 The full dataset can't be committed — `sensor_telemetry.csv` is 177MB (over GitHub's
 100MB file limit) and `dashboard/anomalies.csv` is 99MB, and feature-engineering 1.96M
 rows doesn't fit a 1GB hosted container anyway. So the repo carries a **committed
-14-day Parquet slice** (`data/demo/`, ~6.5MB total) built by:
+14-day Parquet slice** (`data/demo/`, ~5.9MB total) built by:
 
 ```bash
 python scripts/build_demo_slice.py     # run after scripts/run_pipeline.py
@@ -111,13 +111,13 @@ development set in the root `requirements.txt`.
 ## Architecture
 
 ```
-D:\Nectar\
+nectar-intelligent-facilities-platform/
 ├── PROJECT_STATUS.md               current status + next steps (read this first if resuming)
 ├── PLAN.md                          original pre-build design doc
 ├── pyproject.toml                   makes `nectar` pip-installable (`pip install -e .`)
 ├── data/
 │   ├── raw/                      generated: telemetry, metadata, connectivity, weather
-│   ├── demo/                      committed 14-day Parquet slice (~6.5MB) so the hosted
+│   ├── demo/                      committed 14-day Parquet slice (~5.9MB) so the hosted
 │   │                                dashboard runs without the gitignored 177MB telemetry CSV
 │   └── processed/                 cleaned/feature-engineered parquet output
 ├── src/nectar/                    single source of truth -- imported by every notebook,

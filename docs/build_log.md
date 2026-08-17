@@ -272,5 +272,44 @@ the unchanged `graph.py` functions (no graph logic duplicated).
 Streamlit/testing tooling.
 
 `README.md`, `PROJECT_STATUS.md`, `reports/report.md`, and `PLAN.md` were all updated in
-this same pass to describe both bonuses. **Left for a follow-up:** this work is not yet
-committed/pushed.
+this same pass to describe both bonuses. Committed on `bonus-fastapi-graphql`, pushed,
+and merged into `main` via PR #4.
+
+---
+
+## 13. Hosted-deployment prep (2026-08-17)
+
+Putting the Bonus A dashboard on Streamlit Community Cloud surfaced a problem the local
+build had never had to face: **Cloud deploys from the GitHub repo, and the data isn't
+in it.** `sensor_telemetry.csv` is 177MB (over GitHub's 100MB hard limit) and
+`dashboard/anomalies.csv` is 99MB -- both gitignored for exactly that reason. Even if
+they were committed, a ~1GB hosted container can't feature-engineer 1.96M rows.
+
+**Fix:** a committed 14-day Parquet slice (`data/demo/`, ~5.9MB) plus a
+`preprocessing.demo_mode()` fallback that only engages when the full CSV is *absent* --
+so a local checkout that has run the pipeline still reads the real 1.96M-row dataset and
+is never silently downgraded to the slice. That gating is the part worth testing, and
+`tests/test_preprocessing.py` now asserts it in both directions.
+
+**The bug in the obvious version:** the first slice was a plain *trailing* 14 days,
+which seemed right -- it makes the hosted scores match a local full run exactly. But
+scoring it revealed the final 36h of the dataset contains no imminent faults: all 79
+rotating assets scored 0.10-0.27 against a 0.569 threshold, so the dashboard's
+failure-prediction panel rendered completely empty. Technically correct, useless as a
+demo.
+
+Rather than lower the threshold (which would have been dishonest), the window was moved:
+`--pick-window` scans every candidate hour for the most rotating-asset fault onsets in
+the following 24h, which selected `2025-02-15 15:00`. There the model flags 4 of 79
+assets with a top probability of 0.999.
+
+**Verified this is a different moment, not different data:** every rolling/lag feature
+looks strictly backward over <=24h, so a 14-day window ending at T must produce the same
+scored feature vector as the full 90 days evaluated at T. Confirmed empirically --
+features and predicted probabilities matched to within 1e-9 between the 304k-row slice
+and the 992k-row full history. (Same property `tests/test_features.py::
+test_trailing_window_matches_full_history` already asserts for the dashboard's 36h trim.)
+
+**Also:** `dashboard/requirements.txt` cut the hosted build to the 8 packages the
+dashboard actually imports (from the root file's 22); the app was smoke-tested headless
+with the full-size files hidden, serving with zero exceptions; `LICENSE` (MIT) added.

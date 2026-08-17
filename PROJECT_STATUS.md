@@ -5,8 +5,8 @@ is, how it's built, what's done, and what's left — without re-reading the whol
 re-deriving decisions already made. If picking this project back up in a new session,
 read this file first.
 
-**Last updated:** 2026-07-22. **Status: build complete, tested, verified, cleaned, pushed;
-post-submission bonus work in progress (see §3.1).**
+**Last updated:** 2026-08-17. **Status: build complete, tested, verified, cleaned, pushed.
+Post-submission work done: Bonus B restored (§3.1), hosted-deployment prep (§3.2).**
 **Deadline:** 2026-07-14 (5 calendar days from receipt on 2026-07-09) — submitted.
 
 ---
@@ -110,6 +110,32 @@ via PR #4; `PLAN.md`, `reports/report.md`, and `docs/build_log.md` were all upda
 same pass to describe both bonuses (no longer just the dashboard). The confidential brief
 PDF and the internal `docs/PROJECT_AUDIT_REPORT.md` were removed from the working tree and
 added to `.gitignore` so they can't be re-added by accident.
+
+### 3.2 Post-submission: hosted-deployment prep (2026-08-17)
+
+To put the Bonus A dashboard on Streamlit Community Cloud, which deploys from the GitHub
+repo — where the 177MB `sensor_telemetry.csv` and 99MB `dashboard/anomalies.csv` are
+gitignored, and where a ~1GB container couldn't feature-engineer 1.96M rows anyway:
+
+- `data/demo/` — a committed 14-day Parquet slice (~5.9MB: 304,416 telemetry rows,
+  159,264 anomaly rows), built by the new `scripts/build_demo_slice.py`.
+- `preprocessing.demo_mode()` / `load_demo()` — fall back to the slice only when the full
+  CSV is absent, so a local checkout that has run the pipeline is never silently
+  downgraded. Two new tests in `tests/test_preprocessing.py` assert exactly that.
+- `config.DEMO_END = "2025-02-15 15:00:00"` — the window ends here, not at the dataset
+  tail, because the final 36h contains no imminent faults (every asset scores 0.10–0.27
+  against a 0.569 threshold, so the failure panel renders empty). At `DEMO_END` the model
+  flags 4 of 79 assets, top probability 0.999. Re-derive with
+  `python scripts/build_demo_slice.py --pick-window`.
+- Verified the slice is a window, not a distortion: features and predicted probabilities
+  match a full-history run evaluated at the same moment to within 1e-9.
+- `dashboard/requirements.txt` — 8 packages instead of the root file's 22, since the
+  dashboard imports none of SHAP/LightGBM/XGBoost/ruptures/statsmodels/FastAPI/Jupyter.
+- `LICENSE` (MIT) added; GitHub repo description + 17 topics set; issues #5–#7 filed for
+  the documented open limitations.
+
+**Still open:** the deploy itself (browser-only OAuth at share.streamlit.io — repo is
+ready, entrypoint `dashboard/app.py`, Python 3.13).
 
 ## 4. Architecture (condensed — full detail in `README.md`)
 

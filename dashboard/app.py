@@ -95,6 +95,16 @@ st.title("Intelligent Facilities Platform -- Operations Dashboard")
 st.caption(f"Site: **{site}** | {len(site_meta)} assets | "
            f"{site_tel.timestamp.min().date()} -> {site_tel.timestamp.max().date()}")
 
+if preprocessing.demo_mode():
+    st.info(
+        f"**Hosted demo.** Running on a committed {config.DEMO_DAYS}-day slice of the "
+        f"full 1.96M-row dataset, ending {config.DEMO_END} -- the 177MB telemetry CSV "
+        "is too large for the repo and too heavy for this container. Model inference is "
+        "genuinely live: the same trained RandomForest scores the same engineered "
+        "features it was trained on. Clone the repo and run `scripts/run_pipeline.py` "
+        "for the full 90 days.",
+        icon=":material/info:")
+
 # ---------------- 1. Site overview ----------------
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Assets", len(site_meta))
