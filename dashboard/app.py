@@ -76,13 +76,27 @@ def load_graph_cached(metadata: pd.DataFrame, connectivity: pd.DataFrame) -> nx.
     return gmod.build_graph(metadata, connectivity)
 
 
-_t0 = time.time()
-telemetry, metadata, connectivity, weather, anom = load_all()
-_t_data = time.time() - _t0
+# Startup runs at module import, before anything is drawn -- so an exception here
+# renders a blank page with no visible cause (which is exactly what a first hosted
+# deploy did). Surface it on the page instead of failing silently.
+try:
+    _t0 = time.time()
+    telemetry, metadata, connectivity, weather, anom = load_all()
+    _t_data = time.time() - _t0
 
-_t0 = time.time()
-G = load_graph_cached(metadata, connectivity)
-_t_graph = time.time() - _t0
+    _t0 = time.time()
+    G = load_graph_cached(metadata, connectivity)
+    _t_graph = time.time() - _t0
+except Exception as exc:                                      # noqa: BLE001
+    st.title("Intelligent Facilities Platform")
+    st.error("Startup failed while loading data or building the asset graph.")
+    st.exception(exc)
+    st.caption(
+        f"demo_mode={preprocessing.demo_mode()} | "
+        f"raw dir exists={os.path.isdir(config.DATA_RAW_DIR)} | "
+        f"demo dir exists={os.path.isdir(config.DATA_DEMO_DIR)} | "
+        f"demo files={sorted(os.listdir(config.DATA_DEMO_DIR)) if os.path.isdir(config.DATA_DEMO_DIR) else 'n/a'}")
+    st.stop()
 
 # ---------------- Sidebar ----------------
 st.sidebar.title("Nectar Facilities")
@@ -103,8 +117,7 @@ if preprocessing.demo_mode():
         "is too large for the repo and too heavy for this container. Model inference is "
         "genuinely live: the same trained RandomForest scores the same engineered "
         "features it was trained on. Clone the repo and run `scripts/run_pipeline.py` "
-        "for the full 90 days.",
-        icon=":material/info:")
+        "for the full 90 days.")
 
 # ---------------- 1. Site overview ----------------
 c1, c2, c3, c4 = st.columns(4)
