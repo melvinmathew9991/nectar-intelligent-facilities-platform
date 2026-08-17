@@ -176,7 +176,7 @@ package (`pip install -e .`) via `pyproject.toml`.
 
 ```bash
 pytest tests/ -v                     # expect 74 passed
-python scripts/run_pipeline.py       # expect ~5 min, metrics matching README's TL;DR table
+python scripts/run_pipeline.py       # expect ~8-9 min, metrics matching README's TL;DR table
 ```
 
 ## 7. Where to look for more detail

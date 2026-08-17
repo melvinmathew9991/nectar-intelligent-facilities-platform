@@ -51,7 +51,7 @@ pip install -r requirements.txt
 pip install -e .
 
 # 3. Run the full pipeline (generates data, trains all models, builds the graph,
-#    saves every artifact the dashboard depends on) -- ~5 minutes
+#    saves every artifact the dashboard depends on) -- ~8-9 minutes
 python scripts/run_pipeline.py
 
 # 4. OR run the narrated notebooks in order (same underlying src/nectar/ logic)
