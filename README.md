@@ -1,5 +1,9 @@
 # Nectar Data Scientist Challenge — Intelligent Facilities Platform
 
+[![tests](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/actions/workflows/tests.yml/badge.svg)](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/actions/workflows/tests.yml)
+[![python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 End-to-end IoT analytics solution for Nectar's Intelligent Facilities Platform: EDA,
 predictive maintenance, energy forecasting, anomaly detection, and multi-asset
 connectivity analysis on synthetic commercial-building sensor telemetry — plus an
@@ -112,6 +116,7 @@ development set in the root `requirements.txt`.
 
 ```
 nectar-intelligent-facilities-platform/
+├── .github/workflows/tests.yml     CI: lint + regenerate data + full test suite
 ├── PROJECT_STATUS.md               current status + next steps (read this first if resuming)
 ├── PLAN.md                          original pre-build design doc
 ├── pyproject.toml                   makes `nectar` pip-installable (`pip install -e .`)
@@ -258,7 +263,19 @@ pytest tests/ -v              # 74 tests: generator output ranges/counts, featur
                                # skip automatically if the pipeline hasn't been run yet)
 python scripts/run_pipeline.py  # full headless run; confirms every artifact the
                                  # dashboard/API need gets produced without Jupyter
+ruff check .                     # lint (config in pyproject.toml)
 ```
+
+**CI** ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) runs on every push
+and PR: lint, then regenerate the raw datasets from scratch, then the full suite. Data
+generation runs in CI rather than being skipped — it takes ~30s and means every run
+re-verifies the generator itself, not just the modules downstream of it.
+
+**Dependency policy.** `requirements.txt` is a pinned lock file — the exact versions
+every committed number was produced with, because a floating `pandas>=2.2` would
+undermine the reproducibility claim this project rests on. `pyproject.toml` carries the
+looser ranges you'd depend on as a package, with extras: `pip install -e ".[dashboard]"`,
+`[api]`, `[notebooks]`, `[dev]`.
 
 Every notebook (01–06) was executed in place (`jupyter nbconvert --execute`) — outputs
 are real, not fabricated. `scripts/run_pipeline.py`'s printed metrics were confirmed to

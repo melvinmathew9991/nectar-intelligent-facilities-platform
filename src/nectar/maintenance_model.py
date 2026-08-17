@@ -6,16 +6,24 @@ by asset_type. Called from notebooks/03_predictive_maintenance.ipynb and
 scripts/run_pipeline.py -- exactly one copy of this logic.
 """
 from __future__ import annotations
+
 import os
 import warnings
+
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    average_precision_score,
+    f1_score,
+    precision_recall_curve,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import (precision_score, recall_score, f1_score, roc_auc_score,
-                              average_precision_score, precision_recall_curve)
 
 from . import config
 from .logging_config import get_logger

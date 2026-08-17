@@ -5,11 +5,12 @@ asset_metadata.parent_asset_id (hierarchy) + asset_connectivity.csv
 brief's own examples, simulates failure propagation, and audits data quality.
 """
 from __future__ import annotations
+
 import os
 import pickle
-import numpy as np
-import pandas as pd
+
 import networkx as nx
+import pandas as pd
 
 from . import config
 from .logging_config import get_logger
@@ -134,7 +135,7 @@ def data_quality_report(metadata: pd.DataFrame, connectivity: pd.DataFrame, G: n
     cycles = list(nx.simple_cycles(G)) if G.number_of_nodes() < 500 else []
 
     valid_parent = metadata[metadata["parent_asset_id"].notna() & metadata["parent_asset_id"].isin(asset_ids)]
-    has_edge = set(zip(connectivity["source_asset_id"], connectivity["target_asset_id"]))
+    has_edge = set(zip(connectivity["source_asset_id"], connectivity["target_asset_id"], strict=True))
     missing_relationships = [(r.parent_asset_id, r.asset_id) for r in valid_parent.itertuples()
                               if (r.parent_asset_id, r.asset_id) not in has_edge]
 

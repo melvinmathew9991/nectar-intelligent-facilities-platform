@@ -6,11 +6,12 @@ computed per-asset, sorted by time, using only past-or-present information
 -- no look-ahead leakage.
 """
 from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 
 from . import config
-from .preprocessing import impute_sensors, SENSOR_COLS
+from .preprocessing import SENSOR_COLS, impute_sensors
 
 STEPS_PER_HOUR = 6
 MAINT_WINDOWS_HOURS = (1, 6, 24)
@@ -122,8 +123,8 @@ def build_forecast_features(telemetry: pd.DataFrame, weather: pd.DataFrame,
 
     def _per_bldg(b: pd.DataFrame) -> pd.DataFrame:
         b = b.sort_values("timestamp")
-        for l in lags:
-            b[f"lag_{l}"] = b["energy"].shift(l)
+        for lag in lags:
+            b[f"lag_{lag}"] = b["energy"].shift(lag)
         for w in roll:
             b[f"roll_mean_{w}"] = b["energy"].shift(horizon).rolling(w, min_periods=1).mean()
         # weather forecast is assumed known ahead (as in real NWP feeds) --
@@ -136,6 +137,6 @@ def build_forecast_features(telemetry: pd.DataFrame, weather: pd.DataFrame,
 
     feat_cols = (["hour", "dow", "is_weekend", "hour_sin", "hour_cos",
                   "outdoor_temp", "outdoor_humidity"]
-                 + [f"lag_{l}" for l in lags] + [f"roll_mean_{w}" for w in roll])
+                 + [f"lag_{lag}" for lag in lags] + [f"roll_mean_{w}" for w in roll])
     hourly = hourly.dropna(subset=[f"lag_{max(lags)}"]).reset_index(drop=True)
     return hourly, feat_cols

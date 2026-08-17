@@ -9,10 +9,12 @@ noise/fault/anomaly injection on top. This makes a chiller and its child
 AHUs move together physically without an iterative control-loop simulator.
 """
 from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 
 from . import config
+
 
 # ---------------------------------------------------------------------------
 # Building-level context: occupancy, cooling load index, operating mode

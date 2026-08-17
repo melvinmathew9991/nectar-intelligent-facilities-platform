@@ -4,12 +4,14 @@ rate, threshold selection, per-asset-type error breakdown, and artifact
 round-tripping."""
 import os
 import sys
+
+import joblib
 import numpy as np
 import pandas as pd
-import joblib
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-from nectar import maintenance_model as mm, config
+from nectar import config
+from nectar import maintenance_model as mm
 
 
 def _synthetic_dataset(n_days=100, seed=0):

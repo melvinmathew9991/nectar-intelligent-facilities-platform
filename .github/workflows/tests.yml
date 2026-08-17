@@ -1,0 +1,41 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Lint
+        run: ruff check .
+
+      # The 177MB sensor_telemetry.csv is gitignored (over GitHub's file limit),
+      # but generation is deterministic (SEED=42) and takes well under a minute --
+      # so CI regenerates it rather than skipping every test that reads it. This
+      # also means each run re-verifies the generator itself, not just the
+      # modules downstream of it.
+      - name: Generate raw datasets
+        run: python -m nectar.data_generation
+
+      - name: Run tests
+        run: pytest tests/ -v

@@ -2,6 +2,7 @@
 past-or-present data, and the 24h-ahead target is genuinely forward-looking."""
 import os
 import sys
+
 import numpy as np
 import pandas as pd
 import pytest

@@ -5,11 +5,12 @@ plain CSV read, uses the cache on a hit, and never serves stale data once
 the source CSV changes."""
 import os
 import sys
-import time
+
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-from nectar import config, preprocessing as pp
+from nectar import config
+from nectar import preprocessing as pp
 
 
 def _write_csv(path, rows):

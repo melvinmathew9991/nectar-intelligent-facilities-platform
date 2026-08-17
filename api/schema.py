@@ -20,7 +20,8 @@ import strawberry
 from strawberry.fastapi import GraphQLRouter
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
-from nectar import config, preprocessing, graph as gmod  # noqa: E402
+from nectar import config, preprocessing  # noqa: E402
+from nectar import graph as gmod
 
 GRAPH_PATH = os.path.join(config.MODELS_DIR, "asset_graph.pkl")
 

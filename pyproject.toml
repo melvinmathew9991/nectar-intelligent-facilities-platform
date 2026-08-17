@@ -5,8 +5,84 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nectar"
 version = "1.0.0"
-description = "Nectar Intelligent Facilities Platform -- IoT analytics pipeline"
+description = "Nectar Intelligent Facilities Platform -- IoT analytics pipeline for predictive maintenance, energy forecasting, anomaly detection, and asset connectivity analysis"
+readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Melvin Mathew" }]
+keywords = [
+    "iot",
+    "predictive-maintenance",
+    "anomaly-detection",
+    "time-series-forecasting",
+    "smart-buildings",
+    "facilities-management",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Operating System :: OS Independent",
+]
+
+# The core pipeline: data generation -> preprocessing -> features -> the 5 tasks.
+# Lower bounds only, so the package stays installable alongside other work.
+# `requirements.txt` pins the exact versions every committed number was produced
+# with -- use that to reproduce, use this to depend on.
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "scikit-learn>=1.4",
+    "lightgbm>=4.3",
+    "xgboost>=2.0",
+    "statsmodels>=0.14",
+    "ruptures>=1.1",
+    "networkx>=3.2",
+    "matplotlib>=3.8",
+    "pyarrow>=15.0",
+    "joblib>=1.4",
+]
+
+[project.optional-dependencies]
+dashboard = ["streamlit>=1.33"]
+api = ["fastapi>=0.110", "uvicorn>=0.29", "pydantic>=2.6", "strawberry-graphql[fastapi]>=0.230"]
+notebooks = ["jupyter>=1.0", "nbconvert>=7.16", "seaborn>=0.13", "shap>=0.45", "pyvis>=0.3"]
+dev = ["pytest>=8.1", "ruff>=0.6"]
+
+[project.urls]
+Repository = "https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform"
+Issues = "https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["notebooks", ".venv"]
+
+[tool.ruff.lint]
+# Pragmatic set: real bugs (F), style (E/W), import order (I), unused args and
+# comprehension/bugbear smells. Not the full ruleset -- this is an analysis
+# codebase, not a library, and blanket docstring/annotation rules would add
+# noise without catching defects.
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+ignore = [
+    "E501",  # line length is handled by the formatter, not enforced as an error
+    "B008",  # function call in default arg -- FastAPI's Depends() idiom
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Entry points deliberately insert src/ on sys.path before importing `nectar`,
+# so their imports cannot all sit at the top of the file. This is the documented
+# alternative to requiring `pip install -e .` just to run a script or a test.
+"tests/*" = ["E402"]
+"scripts/*" = ["E402"]
+"dashboard/*" = ["E402"]
+"api/*" = ["E402"]

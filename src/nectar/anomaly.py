@@ -6,6 +6,7 @@ anomaly/fault archetypes that actually produce that shape in the data
 ruptures change-point detection (degradation onset / stuck-sensor windows).
 """
 from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest

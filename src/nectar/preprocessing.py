@@ -4,7 +4,9 @@ script. Loading + missing-value handling live here once; nothing else in
 the repo re-implements them.
 """
 from __future__ import annotations
+
 import os
+
 import pandas as pd
 
 from . import config

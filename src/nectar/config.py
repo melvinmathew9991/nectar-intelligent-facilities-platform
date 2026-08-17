@@ -7,6 +7,7 @@ tables (used by physics.py to generate realistic signal profiles and by
 docs/data_dictionary.md to document them).
 """
 from __future__ import annotations
+
 import os
 
 # ---------------------------------------------------------------------------

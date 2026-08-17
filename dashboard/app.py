@@ -11,14 +11,15 @@ import sys
 import time
 
 import joblib
+import matplotlib.pyplot as plt
+import networkx as nx
 import numpy as np
 import pandas as pd
-import networkx as nx
-import matplotlib.pyplot as plt
 import streamlit as st
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
-from nectar import config, preprocessing, features, graph as gmod
+from nectar import config, features, preprocessing
+from nectar import graph as gmod
 
 st.set_page_config(page_title="Nectar Facilities Platform", layout="wide")
 BASE = os.path.dirname(__file__)
@@ -307,7 +308,7 @@ for n, (x, y) in pos.items():
     lx, ly = label_pos[n]
     ax.plot([x, lx], [y, ly], color="#aaaaaa", lw=0.5, zorder=1)
 nx.draw_networkx_labels(subG, label_pos, ax=ax, font_size=7, font_color="black",
-                         bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=0.5))
+                         bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8, "pad": 0.5})
 ax.axis("off")
 title = (f"{site} -- full asset connectivity map" if sel == ALL_OPTION
          else f"{sel} -- failure impact trace (black=selected, amber=downstream impact)")
@@ -315,7 +316,7 @@ ax.set_title(title)
 
 # On-graph legend -- so the color key is readable directly from the figure
 # (e.g. a screenshot or recording) without relying on a separate caption.
-legend_entries = [(atype, color) for atype, color in tc.items()]
+legend_entries = list(tc.items())
 if sel != ALL_OPTION:
     legend_entries += [("Selected (failed)", SELECTED_COLOR), ("Downstream impact", "#f39c12")]
 legend_handles = [plt.Line2D([0], [0], marker="o", color="w", markerfacecolor=color,

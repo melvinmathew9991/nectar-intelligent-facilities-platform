@@ -3,6 +3,7 @@ counts land in target ranges, no structural corruption. Run against the
 already-generated data/raw/*.csv (deterministic, SEED=42)."""
 import os
 import sys
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -81,7 +82,6 @@ def test_operating_mode_heating_is_rare_edge_case(telemetry):
 
 
 def test_dq_orphan_assets_detected(metadata, connectivity):
-    asset_ids = set(metadata["asset_id"])
     conn_ids = set(connectivity["source_asset_id"]) | set(connectivity["target_asset_id"])
     isolated = metadata[metadata["parent_asset_id"].isna() & ~metadata["asset_id"].isin(conn_ids)]
     assert len(isolated) >= config.DQ_ORPHAN_ASSETS
@@ -102,7 +102,7 @@ def test_dq_duplicate_edges_detected(connectivity):
 def test_dq_missing_relationships_detected(metadata, connectivity):
     """Assets with a real parent (not a DQ-invalid one) but no matching connectivity row."""
     asset_ids = set(metadata["asset_id"])
-    has_edge = set(zip(connectivity["source_asset_id"], connectivity["target_asset_id"]))
+    has_edge = set(zip(connectivity["source_asset_id"], connectivity["target_asset_id"], strict=True))
     valid_parent = metadata[metadata["parent_asset_id"].notna()
                              & metadata["parent_asset_id"].isin(asset_ids)]
     missing = [r for r in valid_parent.itertuples()

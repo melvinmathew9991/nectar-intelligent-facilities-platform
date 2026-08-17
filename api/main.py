@@ -28,9 +28,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
-from nectar import config, preprocessing, features, graph as gmod  # noqa: E402
-
 from api.schema import graphql_router  # noqa: E402
+from nectar import config, features, preprocessing  # noqa: E402
+from nectar import graph as gmod
 
 app = FastAPI(title="Nectar Intelligent Facilities API", version="1.1")
 app.include_router(graphql_router, prefix="/graphql")

@@ -12,7 +12,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from nectar import config, preprocessing, graph as gmod  # noqa: E402
+from nectar import config, preprocessing  # noqa: E402
+from nectar import graph as gmod
 
 TELEMETRY_PATH = os.path.join(config.DATA_RAW_DIR, "sensor_telemetry.csv")
 

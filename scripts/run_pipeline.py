@@ -15,8 +15,9 @@ import warnings
 warnings.filterwarnings("ignore")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from nectar import (config, data_generation, preprocessing, features,
-                     maintenance_model as mm, forecasting, anomaly, graph as gmod)
+from nectar import anomaly, config, data_generation, features, forecasting, preprocessing
+from nectar import graph as gmod
+from nectar import maintenance_model as mm
 from nectar.logging_config import get_logger
 
 log = get_logger("run_pipeline")

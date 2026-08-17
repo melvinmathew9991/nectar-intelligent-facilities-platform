@@ -8,7 +8,9 @@ afternoon) + AR(1) day-to-day noise, at the same 10-min resolution as the
 telemetry.
 """
 from __future__ import annotations
+
 import os
+
 import numpy as np
 import pandas as pd
 

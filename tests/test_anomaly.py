@@ -4,6 +4,7 @@ important -- does NOT flag the normal diurnal cycle it must not confuse
 for an anomaly."""
 import os
 import sys
+
 import numpy as np
 import pandas as pd
 

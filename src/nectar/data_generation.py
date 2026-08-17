@@ -5,11 +5,14 @@ data-quality issues), and physics-grounded telemetry (with fault archetypes
 and standalone anomalies). See PLAN.md sections 1.1-1.8.
 """
 from __future__ import annotations
+
 import os
+
 import numpy as np
 import pandas as pd
 
-from . import config, physics, weather as weather_mod
+from . import config, physics
+from . import weather as weather_mod
 from .logging_config import get_logger
 
 log = get_logger(__name__)
@@ -39,7 +42,7 @@ def _make_asset_row(asset_id, name, site_id, building_id, asset_type, parent_id,
 def build_metadata(rng: np.random.Generator) -> tuple[pd.DataFrame, pd.DataFrame]:
     assets, edges = [], []
 
-    for site_id, site_cfg in config.SITES.items():
+    for site_id in config.SITES:
         for b in range(1, config.BUILDINGS_PER_SITE + 1):
             building_id = f"{site_id}-B{b}"
             ahu_seq = env_seq = 0
@@ -215,7 +218,7 @@ def generate_telemetry(metadata: pd.DataFrame, weather_df: pd.DataFrame,
                                           scale=config.DOWNSTREAM_FAULT_EFFECT_SCALE)
 
     # ---- standalone anomalies (independent of faults) ----
-    for aid, series in series_by_asset.items():
+    for series in series_by_asset.values():
         series["power_consumption"], _ = physics.inject_power_spikes(series["power_consumption"], rng)
         if rng.random() < config.ANOMALY_DRIFT_ASSET_FRACTION:
             series["temperature"], _ = physics.inject_slow_drift(series["temperature"], rng)
