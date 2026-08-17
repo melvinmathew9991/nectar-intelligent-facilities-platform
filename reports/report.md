@@ -192,7 +192,9 @@ Synthetic data with an added `weather.csv` exogenous feed; Statsmodels over Prop
 (Windows build friction, no material accuracy cost); LSTM/TFT deprioritized (no clear
 accuracy edge at this data volume); a memory-budgeted 300k-row training subsample for
 Task 2 (documented, not silent) given this environment's ~8GB RAM ceiling training 4
-models concurrently.
+models concurrently — since verified to cost only **+0.0036 PR-AUC** against the full
+796,399-row training window, with the same model selected and identical recall, so the
+cap is a measured trade-off rather than an assumed one.
 
 ## 9. Reproducibility
 

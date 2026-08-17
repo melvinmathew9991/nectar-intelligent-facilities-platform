@@ -380,3 +380,51 @@ actually execute the script against the committed demo slice and assert no excep
 plus that the core sections and live-scoring table render. Confirmed it fails on the
 original code with the exact production error before being kept -- a regression test
 that doesn't fail on the bug it was written for is decoration. Suite: 74 -> 76.
+
+---
+
+## 14. Issue #6: what the 300k training cap actually costs (2026-08-17)
+
+The Task 2 memory cap (`MAX_TRAIN_ROWS = 300_000`) had always been described as a
+defensible trade-off, but its cost had never been measured -- it was an assumption
+wearing the clothes of a decision. `scripts/experiment_full_train.py` measures it.
+
+**Result: +0.0036 PR-AUC.** Training on the full 796,399-row window (2.65x the cap)
+moved RandomForest from 0.776589 to 0.780174. Same model selected, recall identical to
+six decimal places (0.763625), precision marginally *lower* (0.8823 vs 0.8842).
+
+| Model | full (796k) | capped (300k) | delta |
+|---|---|---|---|
+| RandomForest | **0.780174** | 0.776589 | +0.0036 |
+| LightGBM | 0.759639 | 0.755892 | +0.0037 |
+| XGBoost | 0.737632 | 0.745132 | **-0.0075** |
+| LogisticRegression | 0.571169 | 0.566445 | +0.0047 |
+
+The cap stays. A fourth-decimal gain on a 227k-row test set at a ~2% positive rate is
+within noise, it doesn't change model selection, and it costs 5x the training time --
+RandomForest alone took 319s on the full set, where all four models on the capped set
+take 296s in `run_pipeline.py`.
+
+**Two things worth recording beyond the headline:**
+
+*It didn't OOM.* The run completed on the same ~8GB machine that produced the kills in
+§4. Two changes made that possible: models are now trained and discarded one at a time
+(`train_models(..., only=)`), since holding four fitted models simultaneously was the
+actual trigger, and the model sizes had already been reduced (150 trees at depth 10, not
+the 300 at depth 14 that §4 describes). So the cap is a real constraint, but a softer
+one than the original failure suggested.
+
+*XGBoost got worse with more data* -- precision 0.871 -> 0.797, PR-AUC -0.0075. Its
+hyperparameters were tuned against the capped subsample and don't transfer. This is the
+honest caveat on the whole experiment: a proper "does more data help" comparison would
+re-tune each candidate rather than just refit it, so none of these deltas should be read
+as the last word. The conclusion that survives is the narrow one -- *this* pipeline, with
+*these* hyperparameters, loses almost nothing to the cap.
+
+**A broken documented path, found by using it.** Issue #6 named
+`time_split(max_train_rows=None)` as the reproduction command. It raised `TypeError` on
+`len(train) > None`. The documented escape hatch from the cap had never been executed.
+Now handled, and the experiment script is the executable version of that instruction.
+
+Nothing was overwritten: `models/predictive_maintenance.pkl` and every published number
+are unchanged.

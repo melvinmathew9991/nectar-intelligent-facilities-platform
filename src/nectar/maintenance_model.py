@@ -37,6 +37,12 @@ MAX_TRAIN_ROWS = 300_000   # memory-budget cap (this machine has ~8GB RAM total;
                             # subsample preserving the positive rate is a standard,
                             # defensible trade-off -- documented explicitly here and
                             # in the notebook rather than silently applied.
+                            #
+                            # Cost measured, not assumed (issue #6): training on the
+                            # full 796,399-row window gains +0.0036 PR-AUC (0.7802 vs
+                            # 0.7766), selects the same model, and yields identical
+                            # recall, for ~5x the training time. Reproduce with
+                            # scripts/experiment_full_train.py.
 
 
 def time_split(df: pd.DataFrame, feats: list[str], train_days: int = TRAIN_DAYS,

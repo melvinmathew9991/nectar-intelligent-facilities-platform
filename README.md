@@ -247,7 +247,11 @@ no copy-pasted preprocessing anywhere in the repo.
 - **Memory-budgeted Task 2 training**: this environment has ~8GB RAM; training 4 models
   (including a 300-tree RandomForest) on the full ~700k-row training set risked an OOM
   kill. A stratified 300k-row subsample (positive rate preserved) is an explicit,
-  documented trade-off, not a silent shortcut.
+  documented trade-off, not a silent shortcut — and its cost has since been **measured,
+  not assumed**: `scripts/experiment_full_train.py` retrained on the full 796,399-row
+  window and gained **+0.0036 PR-AUC** (0.7802 vs 0.7766), with the same model selected
+  and identical recall, for 5× the training time. The cap stays. Details in
+  [issue #6](https://github.com/melvinmathew9991/nectar-intelligent-facilities-platform/issues/6).
 - **`src/nectar/` as the single source of truth** — see Architecture above.
 - **FastAPI `/predict_failure` runs feature engineering inside the request**, calling the
   same `features.build_maintenance_features()` used in training (train/serve parity),
