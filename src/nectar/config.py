@@ -25,7 +25,12 @@ DATA_PROCESSED_DIR = os.path.join(ROOT_DIR, "data", "processed")
 # Small enough to live in git, so the dashboard runs on a hosted deployment where
 # the gitignored full-size telemetry CSV isn't present.
 DATA_DEMO_DIR = os.path.join(ROOT_DIR, "data", "demo")
-DEMO_DAYS = 14
+# 4 days, not more: Streamlit Community Cloud caps container memory (~2.7GB) and a
+# 14-day slice was enough to blank the hosted app on load. 4 days still comfortably
+# covers everything the dashboard computes -- live scoring reads a trailing 36h, and
+# the widest rolling feature is 24h -- while cutting the loaded frame by ~70%. The
+# dashboard never calls build_forecast_features (which would need lag_168 = 7 days).
+DEMO_DAYS = 4
 # The slice ends here rather than at the dataset's tail. The dashboard's live
 # scoring reads each asset's most recent 36h, and the final 36h of the full
 # dataset happens to contain no imminent faults -- every asset scores 0.10-0.27

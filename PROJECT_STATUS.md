@@ -117,8 +117,9 @@ To put the Bonus A dashboard on Streamlit Community Cloud, which deploys from th
 repo — where the 177MB `sensor_telemetry.csv` and 99MB `dashboard/anomalies.csv` are
 gitignored, and where a ~1GB container couldn't feature-engineer 1.96M rows anyway:
 
-- `data/demo/` — a committed 14-day Parquet slice (~5.9MB: 304,416 telemetry rows,
-  159,264 anomaly rows), built by the new `scripts/build_demo_slice.py`.
+- `data/demo/` — a committed 4-day Parquet slice (~1.9MB: 86,976 telemetry rows,
+  45,504 anomaly rows), built by the new `scripts/build_demo_slice.py`. Started at 14
+  days; cut to 4 after the 14-day slice blanked the hosted app on load (memory).
 - `preprocessing.demo_mode()` / `load_demo()` — fall back to the slice only when the full
   CSV is absent, so a local checkout that has run the pipeline is never silently
   downgraded. Two new tests in `tests/test_preprocessing.py` assert exactly that.
@@ -129,8 +130,10 @@ gitignored, and where a ~1GB container couldn't feature-engineer 1.96M rows anyw
   `python scripts/build_demo_slice.py --pick-window`.
 - Verified the slice is a window, not a distortion: features and predicted probabilities
   match a full-history run evaluated at the same moment to within 1e-9.
-- `dashboard/requirements.txt` — 8 packages instead of the root file's 22, since the
-  dashboard imports none of SHAP/LightGBM/XGBoost/ruptures/statsmodels/FastAPI/Jupyter.
+- `dashboard/requirements.txt` — 8 packages instead of the root file's 22. Written
+  expecting Cloud to prefer a dependency file next to the entrypoint; the first real
+  deploy proved it does not (it resolves at the repo root and installed all 159 packages
+  from `requirements.txt`). Kept as a convenience for a minimal local dashboard env.
 - `LICENSE` (MIT) added; GitHub repo description + 17 topics set; issues #5–#7 filed for
   the documented open limitations.
 

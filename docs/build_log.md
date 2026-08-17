@@ -285,13 +285,13 @@ in it.** `sensor_telemetry.csv` is 177MB (over GitHub's 100MB hard limit) and
 `dashboard/anomalies.csv` is 99MB -- both gitignored for exactly that reason. Even if
 they were committed, a ~1GB hosted container can't feature-engineer 1.96M rows.
 
-**Fix:** a committed 14-day Parquet slice (`data/demo/`, ~5.9MB) plus a
+**Fix:** a committed 4-day Parquet slice (`data/demo/`, ~1.9MB) plus a
 `preprocessing.demo_mode()` fallback that only engages when the full CSV is *absent* --
 so a local checkout that has run the pipeline still reads the real 1.96M-row dataset and
 is never silently downgraded to the slice. That gating is the part worth testing, and
 `tests/test_preprocessing.py` now asserts it in both directions.
 
-**The bug in the obvious version:** the first slice was a plain *trailing* 14 days,
+**The bug in the obvious version:** the first slice was a plain *trailing* window,
 which seemed right -- it makes the hosted scores match a local full run exactly. But
 scoring it revealed the final 36h of the dataset contains no imminent faults: all 79
 rotating assets scored 0.10-0.27 against a 0.569 threshold, so the dashboard's
@@ -304,12 +304,32 @@ the following 24h, which selected `2025-02-15 15:00`. There the model flags 4 of
 assets with a top probability of 0.999.
 
 **Verified this is a different moment, not different data:** every rolling/lag feature
-looks strictly backward over <=24h, so a 14-day window ending at T must produce the same
+looks strictly backward over <=24h, so a short window ending at T must produce the same
 scored feature vector as the full 90 days evaluated at T. Confirmed empirically --
-features and predicted probabilities matched to within 1e-9 between the 304k-row slice
+features and predicted probabilities matched to within 1e-9 between the slice
 and the 992k-row full history. (Same property `tests/test_features.py::
 test_trailing_window_matches_full_history` already asserts for the dashboard's 36h trim.)
 
-**Also:** `dashboard/requirements.txt` cut the hosted build to the 8 packages the
-dashboard actually imports (from the root file's 22); the app was smoke-tested headless
-with the full-size files hidden, serving with zero exceptions; `LICENSE` (MIT) added.
+**Also:** the app was smoke-tested headless with the full-size files hidden, serving with
+zero exceptions; `LICENSE` (MIT) added.
+
+**What the first real deploy corrected (2026-08-17):** two assumptions made here were
+wrong, and only deploying surfaced them.
+
+1. `dashboard/requirements.txt` was written on the assumption that Streamlit Cloud
+   prefers a dependency file next to the entrypoint. It does not — it resolves at the
+   repo root, and the build log shows it installing all 159 packages from
+   `requirements.txt` (`WARN: More than one requirements file detected ... Used: uv with
+   requirements.txt`). The file is kept for minimal local dashboard installs, and the
+   README claim was corrected.
+2. The Python version was expected to matter (the pins target 3.13). Cloud used **3.14.7**
+   and every pin resolved cleanly, so it didn't.
+
+**And one real failure:** the 14-day slice booted the server but rendered a blank page --
+`load_all()` runs at module import, so anything that dies there yields no page at all,
+and 304k telemetry rows plus 159k anomaly rows exceeded what the container would carry.
+Cut to **4 days** (86,976 telemetry rows, 45,504 anomaly rows, 1.9MB total), which is
+still strictly more than anything the dashboard computes: live scoring reads a trailing
+36h and the widest rolling feature is 24h. Re-verified after the cut -- the scored
+features and probabilities still match a full-history run at the same moment to 1e-9,
+same 4 assets flagged, same 0.999 top probability.

@@ -12,7 +12,7 @@ dataset contains no imminent faults -- so a tail slice renders an empty
 failure-prediction panel. `--pick-window` reports the hour with the most
 rotating-asset fault onsets in the following 24h, which is how DEMO_END was
 chosen. Feature values for the scored row are unaffected by the window choice:
-every rolling/lag feature looks strictly backward over <=24h, so a 14-day window
+every rolling/lag feature looks strictly backward over <=24h, so a short window
 ending at T yields the same features as the full 90 days evaluated at T
 (asserted in tests/test_features.py::test_trailing_window_matches_full_history).
 

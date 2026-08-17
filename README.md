@@ -79,7 +79,7 @@ LightGBM, XGBoost, statsmodels, ruptures, pyvis install cleanly on this version.
 The full dataset can't be committed — `sensor_telemetry.csv` is 177MB (over GitHub's
 100MB file limit) and `dashboard/anomalies.csv` is 99MB, and feature-engineering 1.96M
 rows doesn't fit a 1GB hosted container anyway. So the repo carries a **committed
-14-day Parquet slice** (`data/demo/`, ~5.9MB total) built by:
+4-day Parquet slice** (`data/demo/`, ~1.9MB total) built by:
 
 ```bash
 python scripts/build_demo_slice.py     # run after scripts/run_pipeline.py
@@ -99,16 +99,17 @@ with the most rotating-asset fault onsets in the following 24h (re-derive it wit
 of 79 assets**, top probability 0.999.
 
 **This is a different moment, not different data or a different model.** Every
-rolling/lag feature looks strictly backward over ≤24h, so a 14-day window ending at T
+rolling/lag feature looks strictly backward over ≤24h, so a 4-day window ending at T
 produces the same scored feature vector as the full 90 days evaluated at T — verified
-directly: features and predicted probabilities match to within 1e-9 between a 304k-row
+directly: features and predicted probabilities match to within 1e-9 between an 87k-row
 slice and the 992k-row full history. Live model inference genuinely runs on the hosted
 app; the trained `models/predictive_maintenance.pkl` is committed (6.4MB).
 
-To deploy: point Streamlit Community Cloud at this repo with
-`dashboard/app.py` as the entrypoint. `dashboard/requirements.txt` keeps the hosted
-build to the 8 packages the dashboard actually imports, rather than the full
-development set in the root `requirements.txt`.
+To deploy: point Streamlit Community Cloud at this repo with `dashboard/app.py` as the
+entrypoint. Note that Cloud installs from the **root** `requirements.txt` — it resolves
+dependency files at the repo root, not next to the entrypoint, so
+`dashboard/requirements.txt` is not used by the hosted build (it remains a convenience
+for running just the dashboard locally: `pip install -r dashboard/requirements.txt`).
 
 ---
 
@@ -122,7 +123,7 @@ nectar-intelligent-facilities-platform/
 ├── pyproject.toml                   makes `nectar` pip-installable (`pip install -e .`)
 ├── data/
 │   ├── raw/                      generated: telemetry, metadata, connectivity, weather
-│   ├── demo/                      committed 14-day Parquet slice (~5.9MB) so the hosted
+│   ├── demo/                      committed 4-day Parquet slice (~1.9MB) so the hosted
 │   │                                dashboard runs without the gitignored 177MB telemetry CSV
 │   └── processed/                 cleaned/feature-engineered parquet output
 ├── src/nectar/                    single source of truth -- imported by every notebook,
