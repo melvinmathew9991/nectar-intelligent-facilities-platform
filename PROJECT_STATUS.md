@@ -137,8 +137,15 @@ gitignored, and where a ~1GB container couldn't feature-engineer 1.96M rows anyw
 - `LICENSE` (MIT) added; GitHub repo description + 17 topics set; issues #5–#7 filed for
   the documented open limitations.
 
-**Still open:** the deploy itself (browser-only OAuth at share.streamlit.io — repo is
-ready, entrypoint `dashboard/app.py`, Python 3.13).
+- `tests/test_dashboard.py` (2 tests) — runs the app via `streamlit.testing.v1.AppTest`.
+  Replaces an HTTP-root fetch that only ever proved a server was listening.
+- `scripts/demo_expectations.py` — prints the hosted-dashboard acceptance checklist
+  (expected per-site counts, day-of-week labels, graph size, which assets should be
+  flagged and where) from the committed slice, so manual verification can't go stale.
+
+**Deployed:** live on Streamlit Community Cloud, entrypoint `dashboard/app.py`. The
+deploy took several attempts — see `docs/build_log.md` §13.1 for what actually went
+wrong (wrong entrypoint) and the day-of-week chart bug it uncovered.
 
 ## 4. Architecture (condensed — full detail in `README.md`)
 

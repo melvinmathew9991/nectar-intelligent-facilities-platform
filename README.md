@@ -143,7 +143,8 @@ nectar-intelligent-facilities-platform/
 ├── notebooks/                     narrated analysis, 01 (data gen) -> 06 (connectivity)
 ├── scripts/
 │   ├── run_pipeline.py             one-command headless reproduction
-│   └── build_demo_slice.py         writes data/demo/ from a completed full run
+│   ├── build_demo_slice.py         writes data/demo/ from a completed full run
+│   └── demo_expectations.py        prints the hosted-dashboard acceptance checklist
 ├── tests/                          76 tests: data generation, feature leakage, graph queries,
 │                                    forecasting, anomaly detection, maintenance model,
 │                                    demo-slice fallback, FastAPI + GraphQL end-to-end
@@ -268,6 +269,24 @@ python scripts/run_pipeline.py  # full headless run; confirms every artifact the
                                  # dashboard/API need gets produced without Jupyter
 ruff check .                     # lint (config in pyproject.toml)
 ```
+
+`tests/test_dashboard.py` executes `dashboard/app.py` through Streamlit's `AppTest`
+against the committed demo slice. That distinction matters: an earlier check started
+Streamlit and fetched the HTTP root, which only returns the static shell — the script
+doesn't run until a browser connects — so it passed while the app was crashing on load.
+
+Those tests prove the app doesn't raise; they don't prove the numbers on screen are
+right. For that:
+
+```bash
+python scripts/demo_expectations.py   # expected values for the hosted dashboard
+```
+
+It prints the slice window, per-site asset counts, expected day-of-week bar labels,
+graph size, isolated assets, and exactly which assets should appear above the failure
+threshold and on which site — all computed from the committed slice and model, so the
+checklist regenerates itself rather than going stale. Note the failure panel is
+site-filtered: a site with zero flagged assets is a correct result, not a failure.
 
 **CI** ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) runs on every push
 and PR: lint, then regenerate the raw datasets from scratch, then the full suite. Data
