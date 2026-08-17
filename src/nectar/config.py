@@ -20,6 +20,11 @@ SEED = 42
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DATA_RAW_DIR = os.path.join(ROOT_DIR, "data", "raw")
 DATA_PROCESSED_DIR = os.path.join(ROOT_DIR, "data", "processed")
+# Committed trailing slice of the full dataset (see scripts/build_demo_slice.py).
+# Small enough to live in git, so the dashboard runs on a hosted deployment where
+# the gitignored full-size telemetry CSV isn't present.
+DATA_DEMO_DIR = os.path.join(ROOT_DIR, "data", "demo")
+DEMO_DAYS = 14
 MODELS_DIR = os.path.join(ROOT_DIR, "models")
 FIGURES_DIR = os.path.join(ROOT_DIR, "reports", "figures")
 DOCS_DIR = os.path.join(ROOT_DIR, "docs")

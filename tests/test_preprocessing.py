@@ -9,7 +9,7 @@ import time
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-from nectar import preprocessing as pp
+from nectar import config, preprocessing as pp
 
 
 def _write_csv(path, rows):
@@ -81,3 +81,45 @@ def test_works_without_parse_dates(tmp_path):
     cached = pp.read_csv_with_parquet_cache(csv_path)
     assert list(cached.columns) == ["asset_id", "asset_type"]
     assert cached["asset_id"].iloc[0] == "A1"
+
+
+def test_demo_mode_only_when_full_csv_absent_and_slice_present(tmp_path, monkeypatch):
+    """demo_mode() gates the hosted-deployment fallback. It must be False
+    whenever the full telemetry CSV exists -- otherwise a local checkout that
+    has run the pipeline would silently serve the 14-day slice instead of the
+    real 1.96M-row dataset."""
+    raw_dir, demo_dir = tmp_path / "raw", tmp_path / "demo"
+    raw_dir.mkdir()
+    demo_dir.mkdir()
+    monkeypatch.setattr(config, "DATA_RAW_DIR", str(raw_dir))
+    monkeypatch.setattr(config, "DATA_DEMO_DIR", str(demo_dir))
+
+    # neither present
+    assert pp.demo_mode() is False
+
+    # slice only -> hosted deployment
+    pd.DataFrame({"timestamp": pd.to_datetime(["2025-01-01"]), "asset_id": ["A1"]}) \
+        .to_parquet(demo_dir / "sensor_telemetry.parquet", index=False)
+    assert pp.demo_mode() is True
+
+    # full CSV present as well -> local run must win
+    _write_csv(str(raw_dir / "sensor_telemetry.csv"),
+               [{"timestamp": "2025-01-01 00:00:00", "asset_id": "A1"}])
+    assert pp.demo_mode() is False, \
+        "full telemetry CSV present but demo_mode() still True -- a real local run would be downgraded"
+
+
+def test_load_demo_returns_none_when_slice_missing(tmp_path, monkeypatch):
+    """load_demo() is called for anomalies, which may legitimately be absent
+    (the dashboard degrades to 'no precomputed anomalies') -- it must return
+    None rather than raising."""
+    demo_dir = tmp_path / "demo"
+    demo_dir.mkdir()
+    monkeypatch.setattr(config, "DATA_DEMO_DIR", str(demo_dir))
+
+    assert pp.load_demo("anomalies") is None
+
+    pd.DataFrame({"asset_id": ["A1"], "score": [0.5]}).to_parquet(
+        demo_dir / "anomalies.parquet", index=False)
+    loaded = pp.load_demo("anomalies")
+    assert loaded is not None and loaded["asset_id"].iloc[0] == "A1"

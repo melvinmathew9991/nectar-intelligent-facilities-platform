@@ -70,6 +70,34 @@ LightGBM, XGBoost, statsmodels, ruptures, pyvis install cleanly on this version.
 
 ---
 
+## Hosted deployment (Streamlit Community Cloud)
+
+The full dataset can't be committed — `sensor_telemetry.csv` is 177MB (over GitHub's
+100MB file limit) and `dashboard/anomalies.csv` is 99MB, and feature-engineering 1.96M
+rows doesn't fit a 1GB hosted container anyway. So the repo carries a **committed
+14-day Parquet slice** (`data/demo/`, ~6.5MB total) built by:
+
+```bash
+python scripts/build_demo_slice.py     # run after scripts/run_pipeline.py
+```
+
+`preprocessing.load_raw()` uses the full CSV whenever it's present and falls back to the
+slice only when it isn't (`preprocessing.demo_mode()`), so a local checkout that has run
+the pipeline is never silently downgraded — asserted in
+`tests/test_preprocessing.py::test_demo_mode_only_when_full_csv_absent_and_slice_present`.
+
+The slice is **trailing**, not leading: the dashboard's live failure scoring uses each
+asset's most recent 36h, so a slice ending where the full dataset ends produces the same
+scores a local full run does. Live model inference is genuinely running on the hosted
+app — the trained `models/predictive_maintenance.pkl` is committed (6.4MB).
+
+To deploy: point Streamlit Community Cloud at this repo with
+`dashboard/app.py` as the entrypoint. `dashboard/requirements.txt` keeps the hosted
+build to the 8 packages the dashboard actually imports, rather than the full
+development set in the root `requirements.txt`.
+
+---
+
 ## Architecture
 
 ```
@@ -79,6 +107,8 @@ D:\Nectar\
 ├── pyproject.toml                   makes `nectar` pip-installable (`pip install -e .`)
 ├── data/
 │   ├── raw/                      generated: telemetry, metadata, connectivity, weather
+│   ├── demo/                      committed 14-day Parquet slice (~6.5MB) so the hosted
+│   │                                dashboard runs without the gitignored 177MB telemetry CSV
 │   └── processed/                 cleaned/feature-engineered parquet output
 ├── src/nectar/                    single source of truth -- imported by every notebook,
 │   ├── config.py                   scripts/run_pipeline.py, dashboard/app.py
@@ -94,12 +124,15 @@ D:\Nectar\
 │   └── logging_config.py
 ├── notebooks/                     narrated analysis, 01 (data gen) -> 06 (connectivity)
 ├── scripts/
-│   └── run_pipeline.py             one-command headless reproduction
-├── tests/                          72 tests: data generation, feature leakage, graph queries,
+│   ├── run_pipeline.py             one-command headless reproduction
+│   └── build_demo_slice.py         writes data/demo/ from a completed full run
+├── tests/                          74 tests: data generation, feature leakage, graph queries,
 │                                    forecasting, anomaly detection, maintenance model,
-│                                    FastAPI + GraphQL end-to-end
+│                                    demo-slice fallback, FastAPI + GraphQL end-to-end
 ├── models/                         predictive_maintenance.pkl, asset_graph.pkl
-├── dashboard/app.py                Streamlit -- Bonus A
+├── dashboard/
+│   ├── app.py                      Streamlit -- Bonus A
+│   └── requirements.txt            dashboard-only deps for the hosted deployment
 ├── api/
 │   ├── main.py                     FastAPI -- Bonus B: POST /predict_failure + graph endpoints
 │   └── schema.py                   Strawberry GraphQL schema over graph.py -- Bonus B
@@ -208,7 +241,7 @@ no copy-pasted preprocessing anywhere in the repo.
 ## Verification
 
 ```bash
-pytest tests/ -v              # 72 tests: generator output ranges/counts, feature
+pytest tests/ -v              # 74 tests: generator output ranges/counts, feature
                                # leakage guards, graph query correctness on a fixture,
                                # forecasting/anomaly/maintenance-model coverage, plus
                                # FastAPI + GraphQL end-to-end (test_api.py/test_graphql.py

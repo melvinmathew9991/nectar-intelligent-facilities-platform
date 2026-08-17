@@ -37,9 +37,31 @@ def read_csv_with_parquet_cache(csv_path: str, parse_dates: list[str] | None = N
     return df
 
 
+def demo_mode() -> bool:
+    """True when the full-size telemetry CSV is absent but the committed demo
+    slice is present -- i.e. a hosted deployment (Streamlit Cloud), where the
+    gitignored 177MB CSV was never checked out. A local clone that has run
+    `scripts/run_pipeline.py` always has the full CSV and takes the normal path,
+    so this never silently downgrades a real local run."""
+    full = os.path.join(config.DATA_RAW_DIR, "sensor_telemetry.csv")
+    demo = os.path.join(config.DATA_DEMO_DIR, "sensor_telemetry.parquet")
+    return not os.path.exists(full) and os.path.exists(demo)
+
+
+def load_demo(name: str, parse_dates: list[str] | None = None) -> pd.DataFrame | None:
+    """Read one Parquet file from the committed demo slice, or None if absent."""
+    path = os.path.join(config.DATA_DEMO_DIR, f"{name}.parquet")
+    return pd.read_parquet(path) if os.path.exists(path) else None
+
+
 def load_raw() -> dict[str, pd.DataFrame]:
-    telemetry = read_csv_with_parquet_cache(os.path.join(config.DATA_RAW_DIR, "sensor_telemetry.csv"),
-                                              parse_dates=["timestamp"])
+    if demo_mode():
+        log.info(f"Full telemetry CSV not found -- loading the committed "
+                 f"{config.DEMO_DAYS}-day demo slice from {config.DATA_DEMO_DIR}")
+        telemetry = load_demo("sensor_telemetry")
+    else:
+        telemetry = read_csv_with_parquet_cache(os.path.join(config.DATA_RAW_DIR, "sensor_telemetry.csv"),
+                                                  parse_dates=["timestamp"])
     metadata = pd.read_csv(os.path.join(config.DATA_RAW_DIR, "asset_metadata.csv"),
                             parse_dates=["installation_date"])
     connectivity = pd.read_csv(os.path.join(config.DATA_RAW_DIR, "asset_connectivity.csv"))

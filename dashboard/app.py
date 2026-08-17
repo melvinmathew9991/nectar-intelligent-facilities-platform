@@ -28,8 +28,12 @@ BASE = os.path.dirname(__file__)
 def load_all():
     raw = preprocessing.load_raw()
     anom_path = os.path.join(BASE, "anomalies.csv")
-    anom = (preprocessing.read_csv_with_parquet_cache(anom_path, parse_dates=["timestamp"])
-             if os.path.exists(anom_path) else None)
+    if os.path.exists(anom_path):
+        anom = preprocessing.read_csv_with_parquet_cache(anom_path, parse_dates=["timestamp"])
+    else:
+        # Hosted deployment: the 99MB anomalies.csv is gitignored, so fall back
+        # to the committed demo slice (see scripts/build_demo_slice.py).
+        anom = preprocessing.load_demo("anomalies")
     return raw["telemetry"], raw["metadata"], raw["connectivity"], raw["weather"], anom
 
 

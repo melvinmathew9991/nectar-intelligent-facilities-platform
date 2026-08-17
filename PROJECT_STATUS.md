@@ -45,7 +45,7 @@ Everything is built, executed for real (not hand-written), and independently ver
       originally built in session 5, removed in `trim-bonus-scope`, now re-added at the
       user's request with an actual GraphQL implementation this time, not just a claim
       that the existing query functions satisfied it)
-- [x] 72/72 automated tests passing (`pytest tests/`) — extended post-submission with
+- [x] 74/74 automated tests passing (`pytest tests/`) — extended post-submission with
       `test_anomaly.py`, `test_forecasting.py`, `test_maintenance_model.py` (22 tests)
       to close a coverage gap: those three modules had shipped in the pipeline with
       zero tests; `test_preprocessing.py` (4 tests) and 2 more in `test_features.py`
@@ -149,7 +149,7 @@ package (`pip install -e .`) via `pyproject.toml`.
 ## 6. Quick verification (run these to confirm nothing has drifted)
 
 ```bash
-pytest tests/ -v                     # expect 72 passed
+pytest tests/ -v                     # expect 74 passed
 python scripts/run_pipeline.py       # expect ~5 min, metrics matching README's TL;DR table
 ```
 
