@@ -66,10 +66,10 @@ python scripts/run_pipeline.py
 # 4. OR run the narrated notebooks in order (same underlying src/nectar/ logic)
 jupyter lab notebooks/     # 01 -> 06
 
-# 5. (Bonus A) Launch the dashboard
+# 5. Launch the operations dashboard (task 6)
 streamlit run dashboard/app.py            # http://localhost:8501
 
-# 6. (Bonus B) Launch the FastAPI + GraphQL service
+# 6. Launch the model-deployment service (task 7)
 uvicorn api.main:app --reload             # http://localhost:8000/docs
                                             # http://localhost:8000/graphql (GraphiQL)
 ```
@@ -159,11 +159,11 @@ nectar-intelligent-facilities-platform/
 │                                    demo-slice fallback, FastAPI + GraphQL end-to-end
 ├── models/                         predictive_maintenance.pkl, asset_graph.pkl
 ├── dashboard/
-│   ├── app.py                      Streamlit -- Bonus A
+│   ├── app.py                      Streamlit ops dashboard (task 6)
 │   └── requirements.txt            dashboard-only deps for the hosted deployment
 ├── api/
-│   ├── main.py                     FastAPI -- Bonus B: POST /predict_failure + graph endpoints
-│   └── schema.py                   Strawberry GraphQL schema over graph.py -- Bonus B
+│   ├── main.py                     FastAPI (task 7): POST /predict_failure + graph endpoints
+│   └── schema.py                   Strawberry GraphQL schema over graph.py (task 7)
 ├── docs/
 │   ├── data_dictionary.md          per-asset-type unit/range/standard reference
 │   ├── build_log.md                chronological build log: bugs found, fixes, decisions
